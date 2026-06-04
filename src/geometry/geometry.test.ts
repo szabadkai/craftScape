@@ -1,51 +1,72 @@
 import { describe, expect, it } from "vitest";
-import { rectNode, ellipseNode } from "../core/model/document";
-import { boundsIntersect, nodeBounds, normalizeRect } from "./bbox";
-import { composeTranslate, parseTranslate } from "./transform";
+import { ellipseNode, rectNode, type SceneNode } from "../core/model/document";
+import {
+  boundsIntersect,
+  localBounds,
+  nodeBounds,
+  normalizeRect,
+  transformBounds,
+  unionBounds,
+} from "./bbox";
+import { rotation, translation } from "./matrix";
 
-describe("transform", () => {
-  it("parses translate with two or one argument", () => {
-    expect(parseTranslate("translate(5 -3)")).toEqual({ tx: 5, ty: -3 });
-    expect(parseTranslate("translate(4, 6)")).toEqual({ tx: 4, ty: 6 });
-    expect(parseTranslate("translate(7)")).toEqual({ tx: 7, ty: 0 });
-    expect(parseTranslate(undefined)).toEqual({ tx: 0, ty: 0 });
-    expect(parseTranslate("rotate(10)")).toEqual({ tx: 0, ty: 0 });
-  });
-
-  it("accumulates translation deltas", () => {
-    expect(composeTranslate(undefined, 5, 5)).toBe("translate(5 5)");
-    expect(composeTranslate("translate(10 10)", -3, 2)).toBe("translate(7 12)");
-  });
-});
+const rect = (id: string) => rectNode({ x: 10, y: 10, width: 20, height: 30, id });
 
 describe("bbox", () => {
   it("normalizes a rect from two corners in any order", () => {
-    expect(normalizeRect({ x: 30, y: 40 }, { x: 10, y: 20 })).toEqual({
-      x: 10,
-      y: 20,
+    expect(normalizeRect({ x: 30, y: 40 }, { x: 10, y: 20 })).toEqual({ x: 10, y: 20, width: 20, height: 20 });
+  });
+
+  it("reads local bounds for rect and ellipse", () => {
+    expect(localBounds(rect("r"))).toEqual({ x: 10, y: 10, width: 20, height: 30 });
+    expect(localBounds(ellipseNode({ cx: 50, cy: 50, rx: 10, ry: 5, id: "e" }))).toEqual({
+      x: 40,
+      y: 45,
       width: 20,
-      height: 20,
+      height: 10,
     });
   });
 
-  it("computes node bounds for rect and ellipse, including translation", () => {
-    const rect = rectNode({ x: 10, y: 10, width: 20, height: 30, id: "r" });
-    expect(nodeBounds(rect)).toEqual({ x: 10, y: 10, width: 20, height: 30 });
-
-    const moved = { ...rect, attrs: { ...rect.attrs, transform: "translate(5 5)" } };
+  it("applies a node transform to its bounds", () => {
+    const moved = { ...rect("r"), attrs: { ...rect("r").attrs, transform: "translate(5 5)" } };
     expect(nodeBounds(moved)).toEqual({ x: 15, y: 15, width: 20, height: 30 });
-
-    const ell = ellipseNode({ cx: 50, cy: 50, rx: 10, ry: 5, id: "e" });
-    expect(nodeBounds(ell)).toEqual({ x: 40, y: 45, width: 20, height: 10 });
   });
 
-  it("returns null for unsupported node types", () => {
-    expect(nodeBounds({ id: "g", type: "g", attrs: {}, children: [] })).toBeNull();
+  it("measures container (group) bounds from children", () => {
+    const group: SceneNode = {
+      id: "g",
+      type: "g",
+      attrs: { transform: "translate(100 0)" },
+      children: [rect("a")],
+    };
+    expect(nodeBounds(group)).toEqual({ x: 110, y: 10, width: 20, height: 30 });
   });
 
-  it("detects overlap but not mere edge-touching", () => {
+  it("transformBounds returns the AABB of a rotated rect", () => {
+    const b = transformBounds(rotation(Math.PI / 2), { x: 0, y: 0, width: 10, height: 20 });
+    expect(b.width).toBeCloseTo(20, 6);
+    expect(b.height).toBeCloseTo(10, 6);
+  });
+
+  it("unions bounds and detects overlap", () => {
+    expect(unionBounds([{ x: 0, y: 0, width: 10, height: 10 }, { x: 20, y: 5, width: 10, height: 10 }])).toEqual({
+      x: 0,
+      y: 0,
+      width: 30,
+      height: 15,
+    });
+    expect(unionBounds([])).toBeNull();
     const a = { x: 0, y: 0, width: 10, height: 10 };
     expect(boundsIntersect(a, { x: 5, y: 5, width: 10, height: 10 })).toBe(true);
     expect(boundsIntersect(a, { x: 10, y: 0, width: 5, height: 5 })).toBe(false);
+  });
+
+  it("translation matrix preserves a rect exactly", () => {
+    expect(transformBounds(translation(3, 4), { x: 1, y: 1, width: 2, height: 2 })).toEqual({
+      x: 4,
+      y: 5,
+      width: 2,
+      height: 2,
+    });
   });
 });

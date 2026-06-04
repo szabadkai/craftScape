@@ -11,7 +11,7 @@ rationale in [`PLAN.md`](PLAN.md).
 | --- | --- | --- |
 | 0 | Scaffold + auto-deploy to GitHub Pages | ✅ |
 | 1 | Document model, SVG round-trip, basic shapes, undo/redo, mobile | ✅ |
-| 2 | Transforms, multi-select, layers & groups, align/distribute | ⬜ |
+| 2 | Transforms, multi-select, groups, z-order, clipboard, align/distribute | ✅ |
 | 3 | Paths & node editing (Bézier pen, node tool) | ⬜ |
 | 4 | Style & fills (gradients, stroke, color, blend modes) | ⬜ |
 | 5 | Text & advanced paths (boolean ops, snapping, measure) | ⬜ |
@@ -40,10 +40,12 @@ Command/History with property-tested `invert ∘ apply == identity`; Rectangle,
 Ellipse, and Select (click/marquee/move) tools; Open/Save `.svg`; Inkscape-style
 shortcuts; unified pointer input with two-finger pinch/pan; responsive layout.
 
-### Phase 2 — Transforms & structure ⬜
-On-canvas transform handles (scale, rotate, skew), accurate multi-select bounds,
-layers and groups with a z-order/object tree, copy/paste/duplicate, delete,
-align & distribute.
+### Phase 2 — Transforms & structure ✅
+On-canvas transform handles (scale + rotate), a uniform affine-matrix transform
+model, accurate multi-select/group bounds, group/ungroup, z-order
+(front/back/raise/lower), copy/cut/paste/duplicate, keyboard nudge, and
+align/distribute. (Skew, layer locking, and tree drag-reorder are deferred to a
+later pass — see `TASKS.md`.)
 
 ### Phase 3 — Paths & nodes ⬜
 Bézier pen tool, node-editing tool (add/remove/move nodes & handles), path data

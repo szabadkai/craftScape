@@ -7,6 +7,7 @@ import {
   type Point,
   type ViewportState,
 } from "../core/viewport/Viewport";
+import type { HandleId } from "../geometry/handles";
 
 interface Options {
   surfaceRef: RefObject<SVGSVGElement>;
@@ -64,9 +65,16 @@ export function usePointerInput({ surfaceRef, vpRef, setVp, onCursor }: Options)
         lastPan.current = { x: e.clientX, y: e.clientY };
         return;
       }
+      const docPoint = toDocument(vpRef.current!, local(e));
+      const handle = (e.target as Element).closest?.("[data-handle]")?.getAttribute("data-handle");
+      if (handle) {
+        if (handle === "rotate") useEditor.getState().beginRotate(docPoint);
+        else useEditor.getState().beginScale(handle as HandleId, docPoint);
+        return;
+      }
       const id = (e.target as Element).closest?.("[data-id]")?.getAttribute("data-id");
       const targetId = id && id !== "root" ? id : null;
-      useEditor.getState().pointerDown(toDocument(vpRef.current!, local(e)), targetId, e.shiftKey);
+      useEditor.getState().pointerDown(docPoint, targetId, e.shiftKey);
     },
     [local, surfaceRef, vpRef],
   );
@@ -96,7 +104,7 @@ export function usePointerInput({ surfaceRef, vpRef, setVp, onCursor }: Options)
       const docPoint = toDocument(vpRef.current!, local(e));
       onCursor(docPoint);
       if (useEditor.getState().gesture.kind !== "none") {
-        useEditor.getState().pointerDrag(docPoint);
+        useEditor.getState().pointerDrag(docPoint, { aspect: e.shiftKey, snap: e.shiftKey });
       }
     },
     [local, onCursor, setVp, surfaceRef, vpRef],

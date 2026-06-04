@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   childIndex,
+  cloneWithNewIds,
   createDocument,
   ellipseNode,
   findNode,
   findParent,
   insertChild,
+  orderChildren,
   rectNode,
   removeNode,
+  reorderChild,
   setAttrs,
 } from "./document";
 
@@ -54,5 +57,23 @@ describe("document model", () => {
     const { doc } = docWithRect();
     expect(removeNode(doc, "r1").children).toHaveLength(0);
     expect(removeNode(doc, "root")).toBe(doc);
+  });
+
+  it("reorders a child within its parent", () => {
+    let doc = createDocument(10, 10);
+    doc = insertChild(doc, doc.id, rectNode({ x: 0, y: 0, width: 1, height: 1, id: "a" }));
+    doc = insertChild(doc, doc.id, rectNode({ x: 0, y: 0, width: 1, height: 1, id: "b" }));
+    doc = insertChild(doc, doc.id, rectNode({ x: 0, y: 0, width: 1, height: 1, id: "c" }));
+    expect(reorderChild(doc, "a", 2).children.map((n) => n.id)).toEqual(["b", "c", "a"]);
+    expect(orderChildren(doc, doc.id, ["c", "b", "a"]).children.map((n) => n.id)).toEqual(["c", "b", "a"]);
+  });
+
+  it("clones a subtree with fresh ids", () => {
+    const node = rectNode({ x: 0, y: 0, width: 1, height: 1, id: "orig" });
+    const group = { id: "g", type: "g", attrs: {}, children: [node] };
+    const clone = cloneWithNewIds(group);
+    expect(clone.id).not.toBe("g");
+    expect(clone.children[0].id).not.toBe("orig");
+    expect(clone.children[0].attrs).toEqual(node.attrs);
   });
 });
