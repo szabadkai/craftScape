@@ -1,0 +1,104 @@
+# CraftScape Task List
+
+Granular, checkbox-level breakdown of the [roadmap](ROADMAP.md). Check items off
+as they land. Each phase ends with its checks green (lint + typecheck +
+coverage + build) and an updated demo.
+
+---
+
+## Phase 0 — Scaffold + auto-deploy ✅
+
+- [x] Vite + React + TypeScript (strict) project
+- [x] ESLint with enforced LOC/complexity limits + Prettier
+- [x] Vitest configured with a coverage gate on logic layers
+- [x] `vite.config.ts` `base: '/craftScape/'` for Pages project hosting
+- [x] GitHub Actions: CI (lint/typecheck/test/build) on branches & PRs
+- [x] GitHub Actions: build + deploy to GitHub Pages on push to `main`
+- [x] App shell with pan/zoomable empty artboard
+- [ ] Enable Pages (Settings → Pages → Source = "GitHub Actions") — _manual, repo owner_
+- [ ] Add Playwright e2e harness + first smoke test
+
+## Phase 1 — Model, render, shapes, undo/redo, mobile ✅
+
+- [x] Immutable `SceneNode` document model (1:1 with SVG)
+- [x] Tree ops: insert/remove/find/setAttrs with structural sharing
+- [x] SVG serialize + parse (lossless round-trip, preserves unknown attrs)
+- [x] `Command` interface + `addNode`/`removeNode`/`setAttrs`/`composite`
+- [x] `History` with undo/redo; property-tested `invert ∘ apply == id`
+- [x] Geometry: bounds, marquee intersection, translate transforms
+- [x] Rectangle tool (drag-create)
+- [x] Ellipse tool (drag-create)
+- [x] Select tool: click, shift multi-select, marquee, drag-move
+- [x] Zustand editor store wiring model + commands + gestures
+- [x] SVG-DOM renderer (`SceneView`/`RawSvgNode`) with faithful attrs
+- [x] Open `.svg` / Save `.svg`
+- [x] Keyboard shortcuts (undo/redo, delete, tool switch, escape)
+- [x] Read-only objects panel
+- [x] Unified pointer input: mouse, trackpad, two-finger pinch/pan
+- [x] Responsive layout + finger-sized touch targets
+- [x] Unit + integration tests (~99% coverage on core/geometry/svg)
+
+## Phase 2 — Transforms & structure ⬜
+
+- [ ] Transform handles overlay (8 handles + rotation handle)
+- [ ] Scale (corner/edge), with aspect-lock modifier
+- [ ] Rotate (around configurable pivot)
+- [ ] Skew
+- [ ] Accurate multi-select bounding box (union of node bounds)
+- [ ] Transform commands recorded as matrix updates (invertible)
+- [ ] Groups: group/ungroup selection (`<g>`)
+- [ ] Layers: create/rename/reorder/show-hide/lock
+- [ ] Z-order: raise/lower/to-front/to-back
+- [ ] Object tree panel: select, reorder (drag), visibility toggle
+- [ ] Copy / cut / paste / duplicate
+- [ ] Delete (already wired) + keyboard nudge of selection
+- [ ] Align & distribute (left/center/right/top/middle/bottom, spacing)
+- [ ] Tests for transform math + structural commands
+- [ ] Playwright: transform + group smoke tests
+
+## Phase 3 — Paths & nodes ⬜
+
+- [ ] Path data model (commands M/L/C/Z) + parser/serializer
+- [ ] Pen tool: place anchor points, drag out Bézier handles
+- [ ] Node tool: select/move nodes, move control handles
+- [ ] Add / delete nodes; toggle smooth/corner/symmetric
+- [ ] Robust path hit-testing (point-near-curve)
+- [ ] Convert shape (rect/ellipse) → path
+- [ ] Path simplify
+- [ ] Tests for Bézier math, hit-testing, conversion
+
+## Phase 4 — Style & fills ⬜
+
+- [ ] Fill/Stroke panel
+- [ ] Solid color picker (HSV + hex + alpha) and swatches
+- [ ] Linear gradient + on-canvas gradient handles
+- [ ] Radial gradient
+- [ ] Stroke: width, dash array, caps, joins, miter
+- [ ] Markers (arrowheads, etc.)
+- [ ] Per-object opacity + blend modes
+- [ ] Eyedropper
+- [ ] Tests for gradient/def (de)serialization
+
+## Phase 5 — Text & advanced paths ⬜
+
+- [ ] Text tool (single + multiline)
+- [ ] Font family/size/weight/letter-spacing controls
+- [ ] Web/local font selection
+- [ ] Text on path
+- [ ] Boolean ops: union, difference, intersection, exclusion
+- [ ] Offset / inset path
+- [ ] Snapping engine (grid, guides, nodes, bbox, intersections)
+- [ ] Measurement tool
+- [ ] Tests for boolean ops (fixtures) + snapping
+
+## Phase 6 — Polish, persistence, export ⬜
+
+- [ ] IndexedDB autosave + document manager (list/rename/delete)
+- [ ] File System Access API (where supported) + download fallback
+- [ ] PNG export (rasterize current artboard)
+- [ ] Raster import (embed as data URI)
+- [ ] Full preferences + customizable keymap
+- [ ] PWA: service worker, manifest, installable, offline
+- [ ] Performance pass (large docs): profiling, dirty-rect updates
+- [ ] Accessibility pass (focus, ARIA, contrast)
+- [ ] Cross-browser + mobile device testing
