@@ -2,7 +2,8 @@
 
 A browser-based vector graphics editor — an open-source, web-native clone of
 [Inkscape](https://inkscape.org). CraftScape edits SVG directly in the browser:
-no install, no plugins, everything runs client-side with optional cloud sync.
+no install, no plugins, **no backend** — everything runs client-side and is
+deployed as a fully static site to GitHub Pages.
 
 > **Status:** Planning. See [`docs/PLAN.md`](docs/PLAN.md) for the full
 > architecture and implementation roadmap.
@@ -11,8 +12,25 @@ no install, no plugins, everything runs client-side with optional cloud sync.
 
 - **SVG-native.** The document *is* an SVG. What you edit is what you export.
 - **Familiar.** Tooling, shortcuts, and workflows modeled on Inkscape.
-- **Offline-first.** Works fully client-side; cloud sync is optional.
+- **100% client-side.** No server, no accounts. Static files on GitHub Pages.
+- **Offline-first.** All state lives in the browser (IndexedDB).
 - **Hackable.** Clean, typed, modular core that's easy to extend.
+
+## Develop
+
+```bash
+npm install
+npm run dev        # local dev server
+npm run build      # production build -> dist/
+npm run preview    # preview the production build
+npm test           # unit tests (vitest)
+```
+
+## Deploy
+
+Every push to the default branch builds the static site and publishes it to
+GitHub Pages automatically via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+No manual steps, no backend.
 
 ## Non-goals (initially)
 

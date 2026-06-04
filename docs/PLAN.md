@@ -12,6 +12,13 @@ CraftScape is a single-page web app for creating and editing **SVG** documents.
 The in-memory document model maps directly to SVG, so export is lossless and
 "view source" of the canvas is the file you ship.
 
+**Deployment model: 100% static, no backend.** The app is a bundle of static
+files served from GitHub Pages. There is no server, no database, no accounts.
+All persistence is in the browser (IndexedDB + file download/upload). Every push
+to the default branch is built and published to Pages automatically by GitHub
+Actions. This constraint shapes the whole design: no feature may require a
+server round-trip.
+
 ### Target feature set (Inkscape-inspired)
 
 | Area | Features |
@@ -30,7 +37,8 @@ The in-memory document model maps directly to SVG, so export is lossless and
 
 - Raster editing, filters beyond standard SVG filter primitives.
 - CMYK / print color management.
-- Real-time multi-user collaboration (designed-for, but not phase 1).
+- Any backend, accounts, cloud storage, or server-side rendering.
+- Real-time multi-user collaboration (would require infra we're not building).
 
 ---
 
@@ -43,9 +51,10 @@ The in-memory document model maps directly to SVG, so export is lossless and
 | UI framework | **React** + **Zustand** | Component panels + a lightweight, un-opinionated store for editor state |
 | Canvas rendering | **Native SVG DOM** (phase 1) → optional **Canvas2D/WebGL** overlay for hot paths | The document is SVG; rendering it as SVG keeps a single source of truth. Escalate to canvas only if profiling demands it |
 | Geometry | **`@thi.ng/geom`** / custom + **`paper.js`** or **`bezier-js`** for path math | Boolean ops, offsetting, hit-testing need robust curve math |
-| Persistence | IndexedDB (local, offline-first) + optional Supabase (cloud sync) | Works offline; cloud is opt-in |
+| Persistence | **IndexedDB** + File System Access API / download | Fully client-side; no server. Documents live in the browser and on disk |
 | Testing | **Vitest** (unit) + **Playwright** (e2e/visual) | Geometry needs unit tests; tools need interaction tests |
 | Linting | ESLint + Prettier + `tsc --noEmit` | Consistency and a green-able CI |
+| Hosting | **GitHub Pages** via GitHub Actions | Static site, auto-deployed on push to default branch |
 
 > Rendering decision is deliberately reversible: we start with the SVG DOM as the
 > renderer (simplest correct path) and keep a `Renderer` interface so a
@@ -79,9 +88,14 @@ knows nothing about React; the UI subscribes to it.
 ├───────────────────────────────────────────────────────────┤
 │  Renderer interface  →  SVG-DOM backend (+ future canvas)  │
 ├───────────────────────────────────────────────────────────┤
-│  Persistence: IndexedDB store + import/export + cloud sync │
+│  Persistence: IndexedDB store + import/export (no backend) │
 └───────────────────────────────────────────────────────────┘
 ```
+
+> **Static-hosting constraint.** Because the app is served from GitHub Pages
+> under a project sub-path (`/craftScape/`), the Vite `base` is set accordingly
+> and all asset references must be relative. Client-side routing (if any) uses
+> hash routing so deep links work without server rewrites.
 
 ### Suggested repository layout
 
@@ -128,11 +142,14 @@ craftScape/
 Each phase is independently demoable and shippable. Estimates assume one focused
 developer; treat them as relative sizing, not commitments.
 
-### Phase 0 — Project scaffold (~few days)
+### Phase 0 — Project scaffold + auto-deploy (~few days)
 - Vite + React + TS strict, ESLint/Prettier, Vitest, Playwright.
-- CI (lint + typecheck + unit + e2e) green on the branch.
+- `vite.config.ts` `base: '/craftScape/'` for GitHub Pages project hosting.
+- GitHub Actions workflow: build on push to default branch → publish `dist/` to
+  GitHub Pages (`actions/deploy-pages`). CI (lint + typecheck + unit) gates it.
 - App shell: blank canvas, empty toolbar/panels, viewport pan/zoom.
-- **Demo:** pan/zoom an empty artboard.
+- **Demo:** the live URL (`https://szabadkai.github.io/craftScape/`) shows a
+  pan/zoomable empty artboard, updated automatically on every push.
 
 ### Phase 1 — Model, render, basic shapes (~1–2 weeks)
 - Document model + SVG serialize/deserialize (round-trip an existing `.svg`).
@@ -167,13 +184,11 @@ developer; treat them as relative sizing, not commitments.
 
 ### Phase 6 — Polish, persistence, export (~1–2 weeks)
 - IndexedDB autosave + document manager; PNG export; import raster.
+- File System Access API (where supported) + download/upload fallback.
 - Full keymap (Inkscape-like defaults), preferences, recent files.
+- PWA / service worker for offline use and installability.
 - Performance pass; large-document profiling; accessibility & a11y review.
-- **Demo:** real-world editing session start to finish.
-
-### Phase 7 (optional/stretch) — Cloud & collaboration
-- Supabase auth + per-user document storage and sync.
-- Foundations for real-time collaboration (CRDT/OT) if pursued.
+- **Demo:** real-world editing session start to finish, fully offline.
 
 ---
 
@@ -192,7 +207,7 @@ developer; treat them as relative sizing, not commitments.
 
 ## 6. Quality bar
 
-- TypeScript `strict`; no `any` in core/geometry.
+- TypeScript `strict`; `no-explicit-any` enforced by lint.
 - Unit tests for all geometry and command invert logic.
 - Playwright smoke test per tool (draw → assert SVG output).
 - CI must pass lint + typecheck + unit + e2e before merge.
@@ -200,12 +215,60 @@ developer; treat them as relative sizing, not commitments.
 
 ---
 
-## 7. Immediate next steps
+## 7. Code structure rules (enforced)
+
+These are not style preferences — they are checked in CI (`eslint.config.js`,
+`vite.config.ts`) and a build fails if violated.
+
+### Deep modules, not spread out
+
+We follow Ousterhout's "deep modules" principle: a module should hide
+substantial functionality behind a **narrow interface**. Prefer a few
+substantial files over many trivial ones.
+
+- A "component" or module owns a real responsibility end-to-end (e.g. the whole
+  `Viewport` coordinate system lives in one file with a handful of exported
+  functions). We do **not** scatter that logic across a dozen one-liner files.
+- New files must earn their existence with a genuine seam (a different
+  responsibility, a different layer), not by splitting a cohesive unit to dodge
+  a line limit.
+- Interfaces stay small even when the implementation behind them is large; the
+  cost is paid once, inside the module, not by every caller.
+
+### Size limits (lint-enforced)
+
+| Rule | Limit | Why |
+| --- | --- | --- |
+| `max-lines` (per file) | **250** (excl. blanks/comments) | Caps sprawl; forces a real split, not padding |
+| `max-lines-per-function` | **120** | One unit graspable in a screen-ful |
+| `complexity` | **15** | Bounds branching per function |
+| `max-depth` | **4** | No deeply nested control flow |
+| `max-params` | **4** | Pass an options object instead |
+| `max-nested-callbacks` | **3** | Keep async/handler nesting flat |
+
+> The ceiling caps sprawl; the deep-modules rule sets the floor. Together they
+> push toward the right shape: cohesive, well-tested modules of moderate size.
+
+### Testing (coverage-enforced)
+
+- Logic-bearing layers (`core/`, `geometry/`, `svg/`) carry unit tests with a
+  **coverage gate** (lines/functions/statements ≥ 80%, branches ≥ 75%) checked
+  in CI via `npm run test:coverage`.
+- UI shell and bootstrap are covered by Playwright e2e (added with the first
+  real tools in Phase 1), not by unit coverage.
+- The `apply ∘ invert == identity` property of commands gets property-based
+  tests once the command layer lands (Phase 1).
+
+---
+
+## 8. Immediate next steps
 
 1. Approve this plan (and the rendering & library choices in §2).
-2. Land **Phase 0**: scaffold + CI green on `claude/inkscape-clone-browser-plan-gnrfy`.
+2. Land **Phase 0**: scaffold + CI + GitHub Pages auto-deploy.
 3. Land **Phase 1**: model + SVG round-trip + rect/ellipse + select + undo.
 
 > Open questions to confirm before Phase 1: (a) SVG-DOM-first rendering OK?
-> (b) React + Zustand for the shell? (c) Is offline-only acceptable for v1 with
-> Supabase deferred to Phase 7?
+> (b) React + Zustand for the shell?
+>
+> **Deployment is settled:** browser-only, no backend, static GitHub Pages
+> deploy via Actions on every push to the default branch.
