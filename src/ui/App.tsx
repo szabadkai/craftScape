@@ -1,19 +1,34 @@
+import { useEditor } from "../app/store";
 import { Canvas } from "./Canvas";
+import { Toolbar } from "./Toolbar";
+import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 
-const TOOLS = [
-  { id: "select", label: "Select", glyph: "▭" },
-  { id: "node", label: "Edit nodes", glyph: "✎" },
-  { id: "rect", label: "Rectangle", glyph: "□" },
-  { id: "ellipse", label: "Ellipse", glyph: "◯" },
-  { id: "pen", label: "Pen", glyph: "✐" },
-  { id: "text", label: "Text", glyph: "T" },
-] as const;
+/** Objects/layers tree (read-only in Phase 1; editing arrives in Phase 2). */
+function ObjectsPanel() {
+  const { doc, selection, setSelection } = useEditor();
+  return (
+    <section className="panel">
+      <h2>Objects</h2>
+      {doc.children.length === 0 && <p className="muted">Draw a shape to begin.</p>}
+      <ul className="object-list">
+        {[...doc.children].reverse().map((node) => (
+          <li key={node.id}>
+            <button
+              type="button"
+              className={selection.includes(node.id) ? "object--selected" : ""}
+              onClick={() => setSelection([node.id])}
+            >
+              {node.type} <span className="muted">#{node.id}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
-/**
- * Phase 0 application shell. Tools and panels are placeholders; the working
- * piece is the pan/zoomable artboard. Subsequent phases fill these in.
- */
 export function App() {
+  useKeyboardShortcuts();
   return (
     <div className="app">
       <header className="topbar">
@@ -21,30 +36,15 @@ export function App() {
         <span className="tagline">browser-based vector editor</span>
       </header>
       <div className="workspace">
-        <nav className="toolbar" aria-label="Tools">
-          {TOOLS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className="tool"
-              title={`${t.label} (coming soon)`}
-              disabled
-            >
-              <span aria-hidden>{t.glyph}</span>
-            </button>
-          ))}
-        </nav>
+        <Toolbar />
         <main className="canvas-area">
           <Canvas />
         </main>
         <aside className="panels" aria-label="Panels">
+          <ObjectsPanel />
           <section className="panel">
             <h2>Fill &amp; Stroke</h2>
             <p className="muted">Styling lands in Phase 4.</p>
-          </section>
-          <section className="panel">
-            <h2>Objects</h2>
-            <p className="muted">Layer &amp; object tree lands in Phase 2.</p>
           </section>
         </aside>
       </div>

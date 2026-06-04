@@ -1,0 +1,90 @@
+import { describe, expect, it } from "vitest";
+import {
+  createDocument,
+  findNode,
+  insertChild,
+  rectNode,
+} from "../model/document";
+import {
+  addNodeCommand,
+  compositeCommand,
+  removeNodeCommand,
+  setAttrsCommand,
+} from "./commands";
+import { History } from "./history";
+
+const base = () => {
+  const doc = createDocument(100, 100);
+  const rect = rectNode({ x: 0, y: 0, width: 10, height: 10, id: "r1" });
+  return insertChild(doc, doc.id, rect);
+};
+
+describe("commands", () => {
+  it("addNode: invert(apply(doc)) is the original document", () => {
+    const doc = createDocument(100, 100);
+    const cmd = addNodeCommand(doc.id, rectNode({ x: 1, y: 2, width: 3, height: 4, id: "r1" }));
+    const applied = cmd.apply(doc);
+    expect(applied.children).toHaveLength(1);
+    expect(cmd.invert(applied)).toEqual(doc);
+  });
+
+  it("removeNode restores the node at its original index on undo", () => {
+    const doc = base();
+    const cmd = removeNodeCommand(doc, "r1");
+    const applied = cmd.apply(doc);
+    expect(applied.children).toHaveLength(0);
+    expect(cmd.invert(applied)).toEqual(doc);
+  });
+
+  it("setAttrs restores prior values, deleting keys that were absent", () => {
+    const doc = base();
+    const cmd = setAttrsCommand(doc, "r1", { transform: "translate(5 0)" });
+    const applied = cmd.apply(doc);
+    expect(findNode(applied, "r1")?.attrs.transform).toBe("translate(5 0)");
+    const reverted = cmd.invert(applied);
+    expect(findNode(reverted, "r1")?.attrs.transform).toBeUndefined();
+    expect(reverted).toEqual(doc);
+  });
+
+  it("composite applies in order and inverts in reverse", () => {
+    const doc = createDocument(100, 100);
+    const cmd = compositeCommand("two", [
+      addNodeCommand(doc.id, rectNode({ x: 0, y: 0, width: 1, height: 1, id: "a" })),
+      addNodeCommand(doc.id, rectNode({ x: 0, y: 0, width: 1, height: 1, id: "b" })),
+    ]);
+    const applied = cmd.apply(doc);
+    expect(applied.children.map((c) => c.id)).toEqual(["a", "b"]);
+    expect(cmd.invert(applied)).toEqual(doc);
+  });
+
+  it("throws when targeting an unknown node", () => {
+    const doc = createDocument(10, 10);
+    expect(() => removeNodeCommand(doc, "nope")).toThrow();
+    expect(() => setAttrsCommand(doc, "nope", { x: "1" })).toThrow();
+  });
+});
+
+describe("History", () => {
+  const noop = { label: "x", apply: (d: number) => d, invert: (d: number) => d };
+
+  it("tracks undo/redo availability and clears redo on push", () => {
+    const h = new History();
+    expect(h.canUndo()).toBe(false);
+    // @ts-expect-error simple numeric stand-in for a Command in this unit test
+    h.push(noop);
+    expect(h.canUndo()).toBe(true);
+    expect(h.canRedo()).toBe(false);
+    h.popUndo();
+    expect(h.canUndo()).toBe(false);
+    expect(h.canRedo()).toBe(true);
+    h.popRedo();
+    expect(h.canUndo()).toBe(true);
+    // pushing a new command discards the redo branch
+    h.popUndo();
+    // @ts-expect-error numeric stand-in
+    h.push(noop);
+    expect(h.canRedo()).toBe(false);
+    h.clear();
+    expect(h.canUndo()).toBe(false);
+  });
+});

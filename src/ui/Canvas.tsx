@@ -1,123 +1,83 @@
-import { useCallback, useRef, useState } from "react";
-import {
-  createViewport,
-  pan,
-  toDocument,
-  zoomAt,
-  type Point,
-  type ViewportState,
-} from "../core/viewport/Viewport";
+import { useRef, useState } from "react";
+import { useEditor, type Gesture } from "../app/store";
+import { findNode, type SceneNode } from "../core/model/document";
+import { createViewport, type Point, type ViewportState } from "../core/viewport/Viewport";
+import { nodeBounds, normalizeRect, type Bounds } from "../geometry/bbox";
+import { Overlay } from "./Overlay";
+import { SceneView } from "./SceneView";
+import { usePointerInput } from "./usePointerInput";
 
 const ARTBOARD = { width: 800, height: 600 };
+const INITIAL: ViewportState = { ...createViewport(), panX: 60, panY: 48 };
 
-/**
- * Phase 0 canvas: a pan/zoomable empty artboard rendered as native SVG.
- *
- * Rendering the document as SVG (rather than to a <canvas>) keeps a single
- * source of truth — the document *is* the SVG. The <g> transform is driven
- * directly by the Viewport. See docs/PLAN.md §2–§3.
- */
+/** Live translation of nodes mid-drag, before the move is committed to history. */
+function moveOffset(gesture: Gesture): { ids: Set<string>; dx: number; dy: number } {
+  if (gesture.kind !== "move") return { ids: new Set(), dx: 0, dy: 0 };
+  return {
+    ids: new Set(gesture.ids),
+    dx: gesture.current.x - gesture.start.x,
+    dy: gesture.current.y - gesture.start.y,
+  };
+}
+
+function selectionRects(
+  doc: SceneNode,
+  selection: string[],
+  off: { ids: Set<string>; dx: number; dy: number },
+): Bounds[] {
+  const rects: Bounds[] = [];
+  for (const id of selection) {
+    const node = findNode(doc, id);
+    const b = node && nodeBounds(node);
+    if (!b) continue;
+    const shift = off.ids.has(id);
+    rects.push({ ...b, x: b.x + (shift ? off.dx : 0), y: b.y + (shift ? off.dy : 0) });
+  }
+  return rects;
+}
+
 export function Canvas() {
-  const [vp, setVp] = useState<ViewportState>(() => ({
-    ...createViewport(),
-    panX: 80,
-    panY: 60,
-  }));
+  const { doc, selection, gesture, tool } = useEditor();
+  const [vp, setVp] = useState<ViewportState>(INITIAL);
+  const vpRef = useRef(vp);
+  vpRef.current = vp;
   const surfaceRef = useRef<SVGSVGElement>(null);
-  const dragRef = useRef<{ x: number; y: number } | null>(null);
-  const [cursorDoc, setCursorDoc] = useState<Point>({ x: 0, y: 0 });
+  const [cursor, setCursor] = useState<Point>({ x: 0, y: 0 });
 
-  const localPoint = useCallback((e: { clientX: number; clientY: number }): Point => {
-    const rect = surfaceRef.current?.getBoundingClientRect();
-    return { x: e.clientX - (rect?.left ?? 0), y: e.clientY - (rect?.top ?? 0) };
-  }, []);
+  const handlers = usePointerInput({ surfaceRef, vpRef, setVp, onCursor: setCursor });
 
-  const onWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-      const factor = Math.exp(-e.deltaY * 0.0015);
-      setVp((cur) => zoomAt(cur, factor, localPoint(e)));
-    },
-    [localPoint],
-  );
-
-  const onPointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      // Middle-button or space-less drag pans the canvas in Phase 0.
-      if (e.button === 1 || e.button === 0) {
-        dragRef.current = { x: e.clientX, y: e.clientY };
-        (e.target as Element).setPointerCapture?.(e.pointerId);
-      }
-    },
-    [],
-  );
-
-  const onPointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      setCursorDoc(toDocument(vp, localPoint(e)));
-      const drag = dragRef.current;
-      if (!drag) return;
-      const dx = e.clientX - drag.x;
-      const dy = e.clientY - drag.y;
-      dragRef.current = { x: e.clientX, y: e.clientY };
-      setVp((cur) => pan(cur, dx, dy));
-    },
-    [vp, localPoint],
-  );
-
-  const endDrag = useCallback(() => {
-    dragRef.current = null;
-  }, []);
-
-  const resetView = useCallback(
-    () => setVp({ ...createViewport(), panX: 80, panY: 60 }),
-    [],
-  );
-
-  const transform = `translate(${vp.panX} ${vp.panY}) scale(${vp.scale})`;
+  const off = moveOffset(gesture);
+  const dragging = doc.children.filter((c) => off.ids.has(c.id));
+  const stationary = doc.children.filter((c) => !off.ids.has(c.id));
+  const rects = selectionRects(doc, selection, off);
+  const previewBox =
+    gesture.kind === "create" || gesture.kind === "marquee"
+      ? normalizeRect(gesture.start, gesture.current)
+      : null;
 
   return (
     <div className="canvas-wrap">
-      <svg
-        ref={surfaceRef}
-        className="canvas-surface"
-        onWheel={onWheel}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerLeave={endDrag}
-      >
+      <svg ref={surfaceRef} className="canvas-surface" {...handlers}>
         <defs>
           <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
             <path d="M20 0H0V20" fill="none" stroke="#e3e6ea" strokeWidth="1" />
           </pattern>
         </defs>
-        <g transform={transform}>
-          {/* The artboard: this rect is the document's page bounds. */}
-          <rect
-            x={0}
-            y={0}
-            width={ARTBOARD.width}
-            height={ARTBOARD.height}
-            fill="#ffffff"
-            stroke="#b8bec7"
-            strokeWidth={1 / vp.scale}
-          />
-          <rect
-            x={0}
-            y={0}
-            width={ARTBOARD.width}
-            height={ARTBOARD.height}
-            fill="url(#grid)"
-            pointerEvents="none"
-          />
+        <g transform={`translate(${vp.panX} ${vp.panY}) scale(${vp.scale})`}>
+          <rect width={ARTBOARD.width} height={ARTBOARD.height} fill="#fff" stroke="#b8bec7" strokeWidth={1 / vp.scale} />
+          <rect width={ARTBOARD.width} height={ARTBOARD.height} fill="url(#grid)" pointerEvents="none" />
+          <SceneView nodes={stationary} />
+          <g transform={`translate(${off.dx} ${off.dy})`}>
+            <SceneView nodes={dragging} />
+          </g>
+          <Overlay rects={rects} gesture={gesture} tool={tool} box={previewBox} />
         </g>
       </svg>
       <div className="statusbar">
-        <span>x: {cursorDoc.x.toFixed(1)}</span>
-        <span>y: {cursorDoc.y.toFixed(1)}</span>
-        <span>zoom: {(vp.scale * 100).toFixed(0)}%</span>
-        <button type="button" onClick={resetView}>
+        <span>x {cursor.x.toFixed(0)}</span>
+        <span>y {cursor.y.toFixed(0)}</span>
+        <span>{(vp.scale * 100).toFixed(0)}%</span>
+        <button type="button" onClick={() => setVp(INITIAL)}>
           Reset view
         </button>
       </div>

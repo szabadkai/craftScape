@@ -134,6 +134,11 @@ craftScape/
    transforms. Tools and snapping always work in document space.
 5. **Renderer behind an interface.** Start with SVG DOM (`<svg>` mirrors the
    model); keep the door open for a canvas/WebGL backend.
+6. **One unified pointer model.** Mouse, trackpad, and touch all flow through a
+   single input layer (`usePointerInput`): one pointer drives the active tool,
+   two pointers pinch-zoom and pan. Mobile is a first-class target, not an
+   afterthought — the layout is responsive and touch targets are sized for
+   fingers.
 
 ---
 
@@ -142,7 +147,7 @@ craftScape/
 Each phase is independently demoable and shippable. Estimates assume one focused
 developer; treat them as relative sizing, not commitments.
 
-### Phase 0 — Project scaffold + auto-deploy (~few days)
+### Phase 0 — Project scaffold + auto-deploy ✅ DONE
 - Vite + React + TS strict, ESLint/Prettier, Vitest, Playwright.
 - `vite.config.ts` `base: '/craftScape/'` for GitHub Pages project hosting.
 - GitHub Actions workflow: build on push to default branch → publish `dist/` to
@@ -151,12 +156,16 @@ developer; treat them as relative sizing, not commitments.
 - **Demo:** the live URL (`https://szabadkai.github.io/craftScape/`) shows a
   pan/zoomable empty artboard, updated automatically on every push.
 
-### Phase 1 — Model, render, basic shapes (~1–2 weeks)
-- Document model + SVG serialize/deserialize (round-trip an existing `.svg`).
-- SVG-DOM renderer subscribing to the model.
-- Rectangle + Ellipse tools; Select tool (click, marquee, move).
-- Command/History with undo/redo.
-- **Demo:** draw rectangles/ellipses, move them, undo, save & reopen the SVG.
+### Phase 1 — Model, render, basic shapes ✅ DONE
+- Document model + SVG serialize/deserialize (lossless round-trip). ✅
+- SVG-DOM renderer subscribing to the model (`SceneView`/`RawSvgNode`). ✅
+- Rectangle + Ellipse tools; Select tool (click, marquee, move). ✅
+- Command/History with undo/redo (property-tested `invert∘apply == id`). ✅
+- Open/Save `.svg`; Inkscape-style keyboard shortcuts. ✅
+- Touch/mobile: unified pointer input with two-finger pinch-zoom & pan,
+  responsive layout. ✅
+- **Demo:** draw rectangles/ellipses, move them, undo, save & reopen the SVG —
+  on desktop or a phone.
 
 ### Phase 2 — Transforms, selection, structure (~2 weeks)
 - Transform handles: scale, rotate, skew; multi-select; bounding boxes.
