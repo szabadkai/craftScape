@@ -102,9 +102,52 @@ body {
 }
 
 .canvas-area {
-  position: relative;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   background: #eceef1;
+}
+
+.canvas-host {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 5px 8px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.action-group {
+  display: flex;
+  gap: 3px;
+}
+
+.action-group + .action-group {
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+}
+
+.action-bar button {
+  min-width: 30px;
+  height: 30px;
+  font-size: 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.action-bar button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .canvas-wrap {
@@ -224,6 +267,12 @@ body {
     width: 44px;
     height: 44px;
     font-size: 1.2rem;
+  }
+
+  .action-bar button {
+    min-width: 40px;
+    height: 40px;
+    font-size: 1.05rem;
   }
 
   .canvas-area {

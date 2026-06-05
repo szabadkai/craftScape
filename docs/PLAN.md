@@ -167,17 +167,20 @@ developer; treat them as relative sizing, not commitments.
 - **Demo:** draw rectangles/ellipses, move them, undo, save & reopen the SVG —
   on desktop or a phone.
 
-### Phase 2 — Transforms, selection, structure (~2 weeks)
-- Transform handles: scale, rotate, skew; multi-select; bounding boxes.
-- Layers + groups + z-order; objects/XML tree panel.
-- Copy/paste/duplicate, delete, align & distribute.
-- **Demo:** compose a multi-object, multi-layer scene with transforms.
+### Phase 2 — Transforms, selection, structure ✅ DONE
+- Affine-matrix transform model; on-canvas scale + rotate handles. ✅
+- Multi-select & recursive group bounding boxes. ✅
+- Groups (group/ungroup) + z-order (front/back/raise/lower). ✅
+- Copy/cut/paste/duplicate, keyboard nudge, align & distribute. ✅
+- **Demo:** compose a multi-object scene, group it, scale/rotate, reorder, align.
+- _Deferred:_ skew, layers panel with lock, tree drag-reorder.
 
-### Phase 3 — Paths & nodes (~2–3 weeks)
-- Pen (Bézier) tool; Node editing tool (add/remove/move nodes & handles).
-- Path data model + robust hit-testing.
-- Convert shape → path; simplify path.
-- **Demo:** draw and edit arbitrary curves.
+### Phase 3 — Paths & nodes ✅ DONE
+- Path model (parse/serialize SVG `d`) + Bézier math (point/flatten/nearest). ✅
+- Pen tool (draw Bézier paths); Node tool (move anchors & handles, delete). ✅
+- Path hit-testing; shape→path conversion; flattened path bounds. ✅
+- **Demo:** draw and edit arbitrary curves; convert a shape to a path.
+- _Deferred:_ add-node-on-segment, node-type toggle, curve-fit simplify.
 
 ### Phase 4 — Style & fills (~2 weeks)
 - Fill/stroke UI: solid, linear & radial gradients, gradient editor on-canvas.

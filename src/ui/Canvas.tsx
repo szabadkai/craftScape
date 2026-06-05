@@ -1,59 +1,99 @@
 import { useRef, useState } from "react";
-import { useEditor, type Gesture } from "../app/store";
-import { findNode, type SceneNode } from "../core/model/document";
+import { applyNodeDrag, type NodeDrag } from "../app/pathActions";
+import { useEditor } from "../app/store";
+import { findNode, type SceneNode, type SvgDocument } from "../core/model/document";
 import { createViewport, type Point, type ViewportState } from "../core/viewport/Viewport";
-import { nodeBounds, normalizeRect, type Bounds } from "../geometry/bbox";
+import { normalizeRect, transformBounds, type Bounds } from "../geometry/bbox";
+import { IDENTITY, toTransform, type Matrix } from "../geometry/matrix";
+import { parsePath, type SubPath } from "../geometry/path";
+import {
+  gestureMatrix,
+  selectionBounds,
+  transformingIds,
+  type Gesture,
+  type Modifiers,
+} from "../tools/gestures";
 import { Overlay } from "./Overlay";
+import { NodeOverlay, PenOverlay } from "./PathOverlay";
 import { SceneView } from "./SceneView";
+import { TransformHandles } from "./TransformHandles";
 import { usePointerInput } from "./usePointerInput";
 
 const ARTBOARD = { width: 800, height: 600 };
 const INITIAL: ViewportState = { ...createViewport(), panX: 60, panY: 48 };
 
-/** Live translation of nodes mid-drag, before the move is committed to history. */
-function moveOffset(gesture: Gesture): { ids: Set<string>; dx: number; dy: number } {
-  if (gesture.kind !== "move") return { ids: new Set(), dx: 0, dy: 0 };
+const isTransforming = (g: Gesture): boolean =>
+  g.kind === "move" || g.kind === "scale" || g.kind === "rotate";
+
+function baseBounds(g: Gesture, doc: SvgDocument): Bounds | null {
+  if (g.kind === "scale" || g.kind === "rotate") return g.bounds;
+  if (g.kind === "move") return selectionBounds(doc, g.ids);
+  return null;
+}
+
+function editSubsFor(
+  doc: SvgDocument,
+  tool: string,
+  id: string | undefined,
+  drag: NodeDrag | null,
+): { subs: SubPath[]; transform?: string } | null {
+  if (tool !== "node" || !id) return null;
+  const node = findNode(doc, id);
+  if (!node || node.type !== "path") return null;
+  const subs = drag ? applyNodeDrag(drag, true) : parsePath(node.attrs.d ?? "");
+  return { subs, transform: node.attrs.transform };
+}
+
+interface Render {
+  stationary: readonly SceneNode[];
+  dragging: SceneNode[];
+  live: Matrix;
+  transforming: boolean;
+  selBox: Bounds | null;
+  previewBox: Bounds | null;
+  edit: { subs: SubPath[]; transform?: string } | null;
+}
+
+interface EditorSlice {
+  doc: SvgDocument;
+  selection: string[];
+  gesture: Gesture;
+  tool: string;
+  mods: Modifiers;
+  nodeDrag: NodeDrag | null;
+}
+
+/** Compute everything the canvas needs to draw, keeping the component lean. */
+function derive(s: EditorSlice): Render {
+  const transforming = isTransforming(s.gesture);
+  const ids = new Set(transformingIds(s.gesture));
+  const live = transforming ? gestureMatrix(s.gesture, s.mods) : IDENTITY;
+  const base = transforming ? baseBounds(s.gesture, s.doc) : selectionBounds(s.doc, s.selection);
+  const previewBox =
+    s.gesture.kind === "create" || s.gesture.kind === "marquee"
+      ? normalizeRect(s.gesture.start, s.gesture.current)
+      : null;
   return {
-    ids: new Set(gesture.ids),
-    dx: gesture.current.x - gesture.start.x,
-    dy: gesture.current.y - gesture.start.y,
+    stationary: transforming ? s.doc.children.filter((c) => !ids.has(c.id)) : s.doc.children,
+    dragging: transforming ? s.doc.children.filter((c) => ids.has(c.id)) : [],
+    live,
+    transforming,
+    selBox: transforming && base ? transformBounds(live, base) : base,
+    previewBox,
+    edit: editSubsFor(s.doc, s.tool, s.selection[0], s.nodeDrag),
   };
 }
 
-function selectionRects(
-  doc: SceneNode,
-  selection: string[],
-  off: { ids: Set<string>; dx: number; dy: number },
-): Bounds[] {
-  const rects: Bounds[] = [];
-  for (const id of selection) {
-    const node = findNode(doc, id);
-    const b = node && nodeBounds(node);
-    if (!b) continue;
-    const shift = off.ids.has(id);
-    rects.push({ ...b, x: b.x + (shift ? off.dx : 0), y: b.y + (shift ? off.dy : 0) });
-  }
-  return rects;
-}
-
 export function Canvas() {
-  const { doc, selection, gesture, tool } = useEditor();
+  const { doc, selection, gesture, tool, mods, pen, nodeDrag, nodeSel } = useEditor();
   const [vp, setVp] = useState<ViewportState>(INITIAL);
   const vpRef = useRef(vp);
   vpRef.current = vp;
   const surfaceRef = useRef<SVGSVGElement>(null);
   const [cursor, setCursor] = useState<Point>({ x: 0, y: 0 });
-
   const handlers = usePointerInput({ surfaceRef, vpRef, setVp, onCursor: setCursor });
 
-  const off = moveOffset(gesture);
-  const dragging = doc.children.filter((c) => off.ids.has(c.id));
-  const stationary = doc.children.filter((c) => !off.ids.has(c.id));
-  const rects = selectionRects(doc, selection, off);
-  const previewBox =
-    gesture.kind === "create" || gesture.kind === "marquee"
-      ? normalizeRect(gesture.start, gesture.current)
-      : null;
+  const r = derive({ doc, selection, gesture, tool, mods, nodeDrag });
 
   return (
     <div className="canvas-wrap">
@@ -66,11 +106,33 @@ export function Canvas() {
         <g transform={`translate(${vp.panX} ${vp.panY}) scale(${vp.scale})`}>
           <rect width={ARTBOARD.width} height={ARTBOARD.height} fill="#fff" stroke="#b8bec7" strokeWidth={1 / vp.scale} />
           <rect width={ARTBOARD.width} height={ARTBOARD.height} fill="url(#grid)" pointerEvents="none" />
-          <SceneView nodes={stationary} />
-          <g transform={`translate(${off.dx} ${off.dy})`}>
-            <SceneView nodes={dragging} />
+          <SceneView nodes={r.stationary} />
+          <g transform={toTransform(r.live)}>
+            <SceneView nodes={r.dragging} />
           </g>
-          <Overlay rects={rects} gesture={gesture} tool={tool} box={previewBox} />
+          {r.selBox && tool === "select" && !r.transforming && (
+            <TransformHandles bounds={r.selBox} scale={vp.scale} />
+          )}
+          {r.selBox && r.transforming && (
+            <rect
+              x={r.selBox.x}
+              y={r.selBox.y}
+              width={r.selBox.width}
+              height={r.selBox.height}
+              fill="none"
+              stroke="#3b6cf6"
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
+            />
+          )}
+          <Overlay gesture={gesture} tool={tool} box={r.previewBox} />
+          {tool === "pen" && pen && <PenOverlay draft={pen} scale={vp.scale} />}
+          {r.edit && (
+            <g transform={r.edit.transform}>
+              <NodeOverlay subs={r.edit.subs} scale={vp.scale} selected={nodeSel} />
+            </g>
+          )}
         </g>
       </svg>
       <div className="statusbar">

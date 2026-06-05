@@ -38,34 +38,39 @@ coverage + build) and an updated demo.
 - [x] Responsive layout + finger-sized touch targets
 - [x] Unit + integration tests (~99% coverage on core/geometry/svg)
 
-## Phase 2 — Transforms & structure ⬜
+## Phase 2 — Transforms & structure ✅
 
-- [ ] Transform handles overlay (8 handles + rotation handle)
-- [ ] Scale (corner/edge), with aspect-lock modifier
-- [ ] Rotate (around configurable pivot)
-- [ ] Skew
-- [ ] Accurate multi-select bounding box (union of node bounds)
-- [ ] Transform commands recorded as matrix updates (invertible)
-- [ ] Groups: group/ungroup selection (`<g>`)
+- [x] Affine-matrix transform foundation (`geometry/matrix.ts`)
+- [x] Transform handles overlay (8 handles + rotation handle)
+- [x] Scale (corner/edge), with aspect-lock modifier (Shift)
+- [x] Rotate about the selection centre, with 15° snap (Shift)
+- [x] Accurate multi-select & group bounding box (recursive union)
+- [x] Transform commands recorded as matrix updates (invertible)
+- [x] Groups: group/ungroup selection (`<g>`, bakes transform on ungroup)
+- [x] Z-order: raise/lower/to-front/to-back
+- [x] Copy / cut / paste / duplicate (with paste offset)
+- [x] Keyboard nudge of selection (arrows, Shift = ×10)
+- [x] Align & distribute (left/center/right/top/middle/bottom + distribute)
+- [x] Action bar UI + keyboard shortcuts (Ctrl+G/C/X/V/D, Home/End/PgUp/PgDn)
+- [x] Tests for transform math + structural commands (+ UI smoke test)
+- [ ] Skew handles
 - [ ] Layers: create/rename/reorder/show-hide/lock
-- [ ] Z-order: raise/lower/to-front/to-back
-- [ ] Object tree panel: select, reorder (drag), visibility toggle
-- [ ] Copy / cut / paste / duplicate
-- [ ] Delete (already wired) + keyboard nudge of selection
-- [ ] Align & distribute (left/center/right/top/middle/bottom, spacing)
-- [ ] Tests for transform math + structural commands
-- [ ] Playwright: transform + group smoke tests
+- [ ] Object tree panel: drag-reorder, visibility toggle
+- [ ] Playwright: transform + group smoke tests (needs e2e harness, Phase 0)
 
-## Phase 3 — Paths & nodes ⬜
+## Phase 3 — Paths & nodes ✅
 
-- [ ] Path data model (commands M/L/C/Z) + parser/serializer
-- [ ] Pen tool: place anchor points, drag out Bézier handles
-- [ ] Node tool: select/move nodes, move control handles
-- [ ] Add / delete nodes; toggle smooth/corner/symmetric
-- [ ] Robust path hit-testing (point-near-curve)
-- [ ] Convert shape (rect/ellipse) → path
-- [ ] Path simplify
-- [ ] Tests for Bézier math, hit-testing, conversion
+- [x] Path data model (M/L/H/V/C/S/Q/T/Z, abs+rel) + parser/serializer
+- [x] Pen tool: place anchor points, drag out Bézier handles, close path
+- [x] Node tool: select/move nodes, move control handles (with mirror)
+- [x] Delete nodes
+- [x] Bézier math (point-at-t, flatten, nearest-distance hit-testing)
+- [x] Convert shape (rect/ellipse) → path, preserving id & style (undoable)
+- [x] Path bounds (flattened) so paths select/transform/align like any node
+- [x] Tests for Bézier math, parse/serialize, node edits, conversion (+ smoke)
+- [ ] Add a node by clicking a segment (split at t)
+- [ ] Toggle node type (smooth/corner/symmetric)
+- [ ] Path simplify (curve fitting)
 
 ## Phase 4 — Style & fills ⬜
 

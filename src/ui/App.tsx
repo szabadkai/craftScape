@@ -1,4 +1,5 @@
 import { useEditor } from "../app/store";
+import { ActionBar } from "./ActionBar";
 import { Canvas } from "./Canvas";
 import { Toolbar } from "./Toolbar";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
@@ -38,7 +39,10 @@ export function App() {
       <div className="workspace">
         <Toolbar />
         <main className="canvas-area">
-          <Canvas />
+          <ActionBar />
+          <div className="canvas-host">
+            <Canvas />
+          </div>
         </main>
         <aside className="panels" aria-label="Panels">
           <ObjectsPanel />

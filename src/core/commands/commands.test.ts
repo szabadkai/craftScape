@@ -8,8 +8,13 @@ import {
 import {
   addNodeCommand,
   compositeCommand,
+  convertToPathCommand,
+  groupCommand,
+  orderChildrenCommand,
   removeNodeCommand,
+  reorderCommand,
   setAttrsCommand,
+  ungroupCommand,
 } from "./commands";
 import { History } from "./history";
 
@@ -61,6 +66,75 @@ describe("commands", () => {
     const doc = createDocument(10, 10);
     expect(() => removeNodeCommand(doc, "nope")).toThrow();
     expect(() => setAttrsCommand(doc, "nope", { x: "1" })).toThrow();
+  });
+});
+
+describe("structural commands", () => {
+  const three = () => {
+    let doc = createDocument(100, 100);
+    for (const id of ["a", "b", "c"]) {
+      doc = insertChild(doc, doc.id, rectNode({ x: 0, y: 0, width: 1, height: 1, id }));
+    }
+    return doc;
+  };
+
+  it("reorderCommand moves a node and undoes cleanly", () => {
+    const doc = three();
+    const cmd = reorderCommand(doc, "a", 2);
+    const applied = cmd.apply(doc);
+    expect(applied.children.map((c) => c.id)).toEqual(["b", "c", "a"]);
+    expect(cmd.invert(applied)).toEqual(doc);
+  });
+
+  it("orderChildrenCommand sets and restores ordering", () => {
+    const doc = three();
+    const cmd = orderChildrenCommand(doc, doc.id, ["c", "b", "a"]);
+    expect(cmd.apply(doc).children.map((c) => c.id)).toEqual(["c", "b", "a"]);
+    expect(cmd.invert(cmd.apply(doc))).toEqual(doc);
+  });
+
+  it("groupCommand wraps selection in a <g> and undoes", () => {
+    const doc = three();
+    const cmd = groupCommand(doc, ["a", "c"]);
+    const applied = cmd.apply(doc);
+    const group = applied.children.find((c) => c.type === "g")!;
+    expect(group.children.map((c) => c.id)).toEqual(["a", "c"]);
+    expect(applied.children.map((c) => c.type)).toEqual(["g", "rect"]);
+    expect(cmd.invert(applied)).toEqual(doc);
+  });
+
+  it("groupCommand rejects nodes with different parents", () => {
+    let doc = three();
+    doc = groupCommand(doc, ["a", "b"]).apply(doc); // nest a,b in a group
+    const groupId = doc.children.find((c) => c.type === "g")!.children[0].id;
+    expect(() => groupCommand(doc, ["c", groupId])).toThrow();
+  });
+
+  it("convertToPathCommand replaces a rect with a path and undoes", () => {
+    let doc = createDocument(100, 100);
+    doc = insertChild(doc, doc.id, rectNode({ x: 0, y: 0, width: 10, height: 10, id: "r1", fill: "#abc" }));
+    const cmd = convertToPathCommand(doc, "r1");
+    const applied = cmd.apply(doc);
+    const path = applied.children[0];
+    expect(path.type).toBe("path");
+    expect(path.id).toBe("r1");
+    expect(path.attrs.d).toContain("M 0 0");
+    expect(path.attrs.fill).toBe("#abc"); // style preserved
+    expect(path.attrs.width).toBeUndefined(); // geometry attrs dropped
+    expect(cmd.invert(applied)).toEqual(doc);
+  });
+
+  it("ungroupCommand bakes the group transform onto children and undoes", () => {
+    let doc = createDocument(100, 100);
+    doc = insertChild(doc, doc.id, rectNode({ x: 0, y: 0, width: 1, height: 1, id: "a" }));
+    doc = groupCommand(doc, ["a"]).apply(doc); // produces a <g> wrapping a — but needs >=1
+    const gid = doc.children.find((c) => c.type === "g")!.id;
+    doc = setAttrsCommand(doc, gid, { transform: "translate(10 0)" }).apply(doc);
+    const cmd = ungroupCommand(doc, gid);
+    const applied = cmd.apply(doc);
+    const a = applied.children.find((c) => c.id === "a")!;
+    expect(a.attrs.transform).toBe("translate(10 0)");
+    expect(cmd.invert(applied)).toEqual(doc);
   });
 });
 

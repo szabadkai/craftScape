@@ -11,8 +11,8 @@ rationale in [`PLAN.md`](PLAN.md).
 | --- | --- | --- |
 | 0 | Scaffold + auto-deploy to GitHub Pages | ✅ |
 | 1 | Document model, SVG round-trip, basic shapes, undo/redo, mobile | ✅ |
-| 2 | Transforms, multi-select, layers & groups, align/distribute | ⬜ |
-| 3 | Paths & node editing (Bézier pen, node tool) | ⬜ |
+| 2 | Transforms, multi-select, groups, z-order, clipboard, align/distribute | ✅ |
+| 3 | Paths & node editing (Bézier pen, node tool) | ✅ |
 | 4 | Style & fills (gradients, stroke, color, blend modes) | ⬜ |
 | 5 | Text & advanced paths (boolean ops, snapping, measure) | ⬜ |
 | 6 | Polish, persistence, export, PWA/offline | ⬜ |
@@ -40,14 +40,19 @@ Command/History with property-tested `invert ∘ apply == identity`; Rectangle,
 Ellipse, and Select (click/marquee/move) tools; Open/Save `.svg`; Inkscape-style
 shortcuts; unified pointer input with two-finger pinch/pan; responsive layout.
 
-### Phase 2 — Transforms & structure ⬜
-On-canvas transform handles (scale, rotate, skew), accurate multi-select bounds,
-layers and groups with a z-order/object tree, copy/paste/duplicate, delete,
-align & distribute.
+### Phase 2 — Transforms & structure ✅
+On-canvas transform handles (scale + rotate), a uniform affine-matrix transform
+model, accurate multi-select/group bounds, group/ungroup, z-order
+(front/back/raise/lower), copy/cut/paste/duplicate, keyboard nudge, and
+align/distribute. (Skew, layer locking, and tree drag-reorder are deferred to a
+later pass — see `TASKS.md`.)
 
-### Phase 3 — Paths & nodes ⬜
-Bézier pen tool, node-editing tool (add/remove/move nodes & handles), path data
-model, robust hit-testing, shape→path conversion, simplify.
+### Phase 3 — Paths & nodes ✅
+Path data model (parse/serialize SVG `d`), Bézier math, a pen tool for drawing
+paths, a node tool to move anchors and Bézier handles and delete nodes, path
+hit-testing, and shape→path conversion. Paths integrate with select/transform/
+align via flattened bounds. (Add-node-on-segment, node-type toggling, and
+path simplify are deferred — see `TASKS.md`.)
 
 ### Phase 4 — Style & fills ⬜
 Fill/stroke UI: solid, linear & radial gradients with an on-canvas editor;

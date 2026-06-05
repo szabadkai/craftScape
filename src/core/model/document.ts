@@ -136,6 +136,44 @@ export function removeNode(root: SvgDocument, id: string): SvgDocument {
   return prune(root);
 }
 
+/** Move a node to a new index within its current parent. */
+export function reorderChild(root: SvgDocument, id: string, toIndex: number): SvgDocument {
+  const parent = findParent(root, id);
+  if (!parent) return root;
+  const from = childIndex(parent, id);
+  if (from < 0) return root;
+  return updateNode(root, parent.id, (p) => {
+    const children = [...p.children];
+    const [moved] = children.splice(from, 1);
+    children.splice(Math.max(0, Math.min(toIndex, children.length)), 0, moved);
+    return { ...p, children };
+  });
+}
+
+/** Replace a node (matched by id) with a new node, keeping its position. */
+export function replaceNode(root: SvgDocument, id: string, next: SceneNode): SvgDocument {
+  return updateNode(root, id, () => next);
+}
+
+/** Reorder a parent's children to match `idOrder` (a permutation of its child ids). */
+export function orderChildren(root: SvgDocument, parentId: string, idOrder: string[]): SvgDocument {
+  return updateNode(root, parentId, (p) => {
+    const byId = new Map(p.children.map((c) => [c.id, c]));
+    const next = idOrder.map((id) => byId.get(id)).filter((c): c is SceneNode => !!c);
+    return next.length === p.children.length ? { ...p, children: next } : p;
+  });
+}
+
+/** Deep copy of a subtree with freshly generated ids (for paste/duplicate). */
+export function cloneWithNewIds(node: SceneNode): SceneNode {
+  return {
+    id: freshId(node.type),
+    type: node.type,
+    attrs: { ...node.attrs },
+    children: node.children.map(cloneWithNewIds),
+  };
+}
+
 /** Merge attribute changes. A `null` value deletes the attribute. */
 export function setAttrs(
   root: SvgDocument,

@@ -3,8 +3,10 @@ import { useEditor, type ToolId } from "../app/store";
 
 const TOOLS: Array<{ id: ToolId; label: string; glyph: string; key: string }> = [
   { id: "select", label: "Select", glyph: "▭", key: "V" },
+  { id: "node", label: "Edit nodes", glyph: "✎", key: "N" },
   { id: "rect", label: "Rectangle", glyph: "□", key: "R" },
   { id: "ellipse", label: "Ellipse", glyph: "◯", key: "E" },
+  { id: "pen", label: "Pen", glyph: "✐", key: "P" },
 ];
 
 function downloadSvg(svg: string) {
