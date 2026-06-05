@@ -182,11 +182,12 @@ developer; treat them as relative sizing, not commitments.
 - **Demo:** draw and edit arbitrary curves; convert a shape to a path.
 - _Deferred:_ add-node-on-segment, node-type toggle, curve-fit simplify.
 
-### Phase 4 — Style & fills (~2 weeks)
-- Fill/stroke UI: solid, linear & radial gradients, gradient editor on-canvas.
-- Stroke: width, dashes, caps/joins, markers; opacity; blend modes.
-- Color picker, swatches, eyedropper.
-- **Demo:** fully styled illustration.
+### Phase 4 — Style & fills ✅ DONE
+- Fill & Stroke panel: solid colour (picker + hex + alpha) + swatches. ✅
+- Linear & radial gradients with editable stops, managed in `<defs>`. ✅
+- Stroke width/dashes/caps/joins/alpha; per-object opacity. ✅
+- **Demo:** a fully styled illustration with gradients.
+- _Deferred:_ on-canvas gradient handles, markers, blend modes, eyedropper.
 
 ### Phase 5 — Text & advanced paths (~2 weeks)
 - Text tool, multiline, font picker (web/local fonts), text-on-path.

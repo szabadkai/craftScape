@@ -19,7 +19,9 @@ import {
 } from "../tools/gestures";
 import { createEditActions, type AlignKind } from "./editActions";
 import { createPathActions, type NodeDrag, type PenDraft } from "./pathActions";
+import { createStyleActions, type StylePatch } from "./styleActions";
 import type { HandleKind, NodeRef } from "../tools/pathEdit";
+import type { GradientKind } from "../style/gradient";
 
 export type ToolId = "select" | "rect" | "ellipse" | "pen" | "node";
 export type { Gesture, Modifiers, AlignKind };
@@ -71,6 +73,10 @@ export interface EditorState {
   nodeUp: (mirror: boolean) => void;
   deleteNode: () => void;
   convertToPath: () => void;
+  // styling (see styleActions.ts)
+  setStyle: (patch: StylePatch) => void;
+  applyGradient: (kind: GradientKind) => void;
+  setGradientStop: (index: number, patch: StylePatch) => void;
 }
 
 type Set = StoreApi<EditorState>["setState"];
@@ -181,5 +187,6 @@ export const useEditor = create<EditorState>((set, get) => {
     },
     ...createEditActions({ get, set, run }),
     ...createPathActions({ get, set, run }),
+    ...createStyleActions({ get, set, run }),
   };
 });

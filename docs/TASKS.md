@@ -72,17 +72,20 @@ coverage + build) and an updated demo.
 - [ ] Toggle node type (smooth/corner/symmetric)
 - [ ] Path simplify (curve fitting)
 
-## Phase 4 — Style & fills ⬜
+## Phase 4 — Style & fills ✅
 
-- [ ] Fill/Stroke panel
-- [ ] Solid color picker (HSV + hex + alpha) and swatches
-- [ ] Linear gradient + on-canvas gradient handles
-- [ ] Radial gradient
-- [ ] Stroke: width, dash array, caps, joins, miter
+- [x] Fill/Stroke panel
+- [x] Solid color (native picker + hex + alpha) and swatches
+- [x] Linear gradient (editable stops, managed in `<defs>`)
+- [x] Radial gradient
+- [x] Stroke: width, dash array, caps, joins, alpha
+- [x] Per-object opacity
+- [x] Reads/derives shared style across multi-selection (mixed detection)
+- [x] Tests for style derivation, gradient (de)serialization, defs command
+- [ ] On-canvas gradient handles
 - [ ] Markers (arrowheads, etc.)
-- [ ] Per-object opacity + blend modes
+- [ ] Blend modes
 - [ ] Eyedropper
-- [ ] Tests for gradient/def (de)serialization
 
 ## Phase 5 — Text & advanced paths ⬜
 

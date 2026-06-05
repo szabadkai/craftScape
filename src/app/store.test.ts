@@ -148,6 +148,26 @@ describe("editor store integration", () => {
     expect(useEditor.getState().doc.children.find((c) => c.id === pathId)!.attrs.d).not.toContain("M 10 10");
   });
 
+  it("applies solid style and a gradient fill", () => {
+    drawRect();
+    const id = useEditor.getState().selection[0];
+    const s = useEditor.getState();
+    s.setStyle({ fill: "#ff0000", stroke: "#0000ff", "stroke-width": "4" });
+    let node = useEditor.getState().doc.children.find((c) => c.id === id)!;
+    expect(node.attrs.fill).toBe("#ff0000");
+    expect(node.attrs["stroke-width"]).toBe("4");
+
+    useEditor.getState().applyGradient("linear");
+    node = useEditor.getState().doc.children.find((c) => c.id === id)!;
+    expect(node.attrs.fill).toMatch(/^url\(#/);
+    expect(useEditor.getState().doc.children.some((c) => c.type === "defs")).toBe(true);
+
+    // recolour the first stop
+    useEditor.getState().setGradientStop(0, { "stop-color": "#123456" });
+    const defs = useEditor.getState().doc.children.find((c) => c.type === "defs")!;
+    expect(defs.children[0].children[0].attrs["stop-color"]).toBe("#123456");
+  });
+
   it("nudges and aligns the selection", () => {
     const a = drawRectAt(10, 10);
     const b = drawRectAt(80, 80);

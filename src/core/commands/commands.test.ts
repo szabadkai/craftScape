@@ -14,8 +14,10 @@ import {
   removeNodeCommand,
   reorderCommand,
   setAttrsCommand,
+  setFillGradientCommand,
   ungroupCommand,
 } from "./commands";
+import { gradientNode } from "../../style/gradient";
 import { History } from "./history";
 
 const base = () => {
@@ -122,6 +124,21 @@ describe("structural commands", () => {
     expect(path.attrs.fill).toBe("#abc"); // style preserved
     expect(path.attrs.width).toBeUndefined(); // geometry attrs dropped
     expect(cmd.invert(applied)).toEqual(doc);
+  });
+
+  it("setFillGradientCommand creates defs, points fill at the gradient, and undoes", () => {
+    let doc = createDocument(100, 100);
+    doc = insertChild(doc, doc.id, rectNode({ x: 0, y: 0, width: 10, height: 10, id: "r1", fill: "#abc" }));
+    const grad = gradientNode("linear", "g1", [
+      { offset: 0, color: "#fff" },
+      { offset: 1, color: "#000" },
+    ]);
+    const cmd = setFillGradientCommand(doc, "r1", grad);
+    const applied = cmd.apply(doc);
+    const defs = applied.children.find((c) => c.type === "defs")!;
+    expect(defs.children[0].id).toBe("g1");
+    expect(applied.children.find((c) => c.id === "r1")!.attrs.fill).toBe("url(#g1)");
+    expect(cmd.invert(applied)).toEqual(doc); // defs removed, fill restored
   });
 
   it("ungroupCommand bakes the group transform onto children and undoes", () => {

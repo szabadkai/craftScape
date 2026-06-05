@@ -13,7 +13,7 @@ rationale in [`PLAN.md`](PLAN.md).
 | 1 | Document model, SVG round-trip, basic shapes, undo/redo, mobile | ✅ |
 | 2 | Transforms, multi-select, groups, z-order, clipboard, align/distribute | ✅ |
 | 3 | Paths & node editing (Bézier pen, node tool) | ✅ |
-| 4 | Style & fills (gradients, stroke, color, blend modes) | ⬜ |
+| 4 | Style & fills (solid/gradient fill, stroke, color, opacity) | ✅ |
 | 5 | Text & advanced paths (boolean ops, snapping, measure) | ⬜ |
 | 6 | Polish, persistence, export, PWA/offline | ⬜ |
 | 7 | (Stretch) anything beyond core — explicitly out of scope for v1 | ⬜ |
@@ -54,10 +54,12 @@ hit-testing, and shape→path conversion. Paths integrate with select/transform/
 align via flattened bounds. (Add-node-on-segment, node-type toggling, and
 path simplify are deferred — see `TASKS.md`.)
 
-### Phase 4 — Style & fills ⬜
-Fill/stroke UI: solid, linear & radial gradients with an on-canvas editor;
-stroke width/dashes/caps/joins/markers; opacity; blend modes; color picker,
-swatches, eyedropper.
+### Phase 4 — Style & fills ✅
+Fill & Stroke panel: solid fill with colour picker, hex, alpha, and swatches;
+linear & radial gradient fills with editable stops (managed in `<defs>`);
+stroke colour/width/dashes/caps/joins/alpha; per-object opacity. (On-canvas
+gradient handles, markers, blend modes, and the eyedropper are deferred — see
+`TASKS.md`.)
 
 ### Phase 5 — Text & advanced paths ⬜
 Text tool (multiline, fonts, text-on-path), boolean ops
