@@ -7,7 +7,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
 }
 
-const TOOL_KEYS: Record<string, ToolId> = { v: "select", r: "rect", e: "ellipse", p: "pen", n: "node" };
+const TOOL_KEYS: Record<string, ToolId> = { v: "select", r: "rect", e: "ellipse", p: "pen", n: "node", t: "text" };
 const NUDGE: Record<string, [number, number]> = {
   ArrowLeft: [-1, 0],
   ArrowRight: [1, 0],

@@ -17,13 +17,16 @@ import {
   type Gesture,
   type Modifiers,
 } from "../tools/gestures";
+import { snapMove } from "../tools/snap";
+import type { SnapGuide } from "../geometry/snap";
 import { createEditActions, type AlignKind } from "./editActions";
 import { createPathActions, type NodeDrag, type PenDraft } from "./pathActions";
 import { createStyleActions, type StylePatch } from "./styleActions";
+import { createTextActions } from "./textActions";
 import type { HandleKind, NodeRef } from "../tools/pathEdit";
 import type { GradientKind } from "../style/gradient";
 
-export type ToolId = "select" | "rect" | "ellipse" | "pen" | "node";
+export type ToolId = "select" | "rect" | "ellipse" | "pen" | "node" | "text";
 export type { Gesture, Modifiers, AlignKind };
 
 export interface EditorState {
@@ -36,6 +39,8 @@ export interface EditorState {
   pen: PenDraft | null;
   nodeDrag: NodeDrag | null;
   nodeSel: NodeRef | null;
+  snapEnabled: boolean;
+  snapGuides: SnapGuide[];
   canUndo: boolean;
   canRedo: boolean;
   setTool: (tool: ToolId) => void;
@@ -44,6 +49,7 @@ export interface EditorState {
   pointerDrag: (pt: Point, mods?: Modifiers) => void;
   pointerUp: () => void;
   cancelGesture: () => void;
+  setSnap: (enabled: boolean) => void;
   beginScale: (handle: HandleId, pt: Point) => void;
   beginRotate: (pt: Point) => void;
   undo: () => void;
@@ -77,6 +83,8 @@ export interface EditorState {
   setStyle: (patch: StylePatch) => void;
   applyGradient: (kind: GradientKind) => void;
   setGradientStop: (index: number, patch: StylePatch) => void;
+  addText: (pt: Point) => void;
+  setText: (text: string) => void;
 }
 
 type Set = StoreApi<EditorState>["setState"];
@@ -89,7 +97,7 @@ function toggle(ids: string[], id: string): string[] {
 function startPointer(io: { get: Get; set: Set }, pt: Point, targetId: string | null, additive: boolean) {
   const { get, set } = io;
   const { tool, selection } = get();
-  if (tool === "pen" || tool === "node") return; // handled by dedicated path actions
+  if (tool === "pen" || tool === "node" || tool === "text") return; // handled by dedicated actions
   if (tool === "rect" || tool === "ellipse") {
     set({ gesture: { kind: "create", start: pt, current: pt } });
   } else if (targetId) {
@@ -115,7 +123,19 @@ function endPointer(get: Get, set: Set, run: (c: Command) => void) {
     const cmd = commitTransform(doc, transformingIds(gesture), gestureMatrix(gesture, mods));
     if (cmd) run(cmd);
   }
-  set({ gesture: { kind: "none" } });
+  set({ gesture: { kind: "none" }, snapGuides: [] });
+}
+
+/** Update a drag, applying object/grid snapping when moving the selection. */
+function applyDrag(s: EditorState, pt: Point, mods: Modifiers | undefined): Partial<EditorState> {
+  if (s.gesture.kind === "none") return {};
+  if (s.gesture.kind === "move" && s.snapEnabled) {
+    const raw = { x: pt.x - s.gesture.start.x, y: pt.y - s.gesture.start.y };
+    const snap = snapMove(s.doc, s.gesture.ids, raw);
+    const current = { x: pt.x + snap.dx, y: pt.y + snap.dy };
+    return { gesture: { ...s.gesture, current }, mods: mods ?? s.mods, snapGuides: snap.guides };
+  }
+  return { gesture: { ...s.gesture, current: pt }, mods: mods ?? s.mods, snapGuides: [] };
 }
 
 /**
@@ -142,15 +162,17 @@ export const useEditor = create<EditorState>((set, get) => {
     pen: null,
     nodeDrag: null,
     nodeSel: null,
+    snapEnabled: true,
+    snapGuides: [],
     canUndo: false,
     canRedo: false,
     setTool: (tool) => set({ tool, gesture: { kind: "none" }, pen: null, nodeDrag: null, nodeSel: null }),
     setSelection: (ids) => set({ selection: ids }),
     pointerDown: (pt, targetId, additive) => startPointer({ get, set }, pt, targetId, additive),
-    pointerDrag: (pt, mods) =>
-      set((s) => (s.gesture.kind === "none" ? s : { gesture: { ...s.gesture, current: pt }, mods: mods ?? s.mods })),
+    pointerDrag: (pt, mods) => set((s) => applyDrag(s, pt, mods)),
     pointerUp: () => endPointer(get, set, run),
-    cancelGesture: () => set({ gesture: { kind: "none" } }),
+    cancelGesture: () => set({ gesture: { kind: "none" }, snapGuides: [] }),
+    setSnap: (enabled) => set({ snapEnabled: enabled, snapGuides: [] }),
     beginScale: (handle, pt) => {
       const b = selectionBounds(get().doc, get().selection);
       if (b) set({ gesture: { kind: "scale", handle, bounds: b, start: pt, current: pt, ids: get().selection } });
@@ -181,6 +203,7 @@ export const useEditor = create<EditorState>((set, get) => {
         pen: null,
         nodeDrag: null,
         nodeSel: null,
+        snapGuides: [],
         canUndo: false,
         canRedo: false,
       });
@@ -188,5 +211,6 @@ export const useEditor = create<EditorState>((set, get) => {
     ...createEditActions({ get, set, run }),
     ...createPathActions({ get, set, run }),
     ...createStyleActions({ get, set, run }),
+    ...createTextActions({ get, set, run }),
   };
 });

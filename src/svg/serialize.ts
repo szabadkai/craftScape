@@ -23,9 +23,16 @@ function attrString(node: SceneNode): string {
   return entries.map(([k, v]) => ` ${k}="${escapeAttr(v)}"`).join("");
 }
 
+function escapeText(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function nodeToString(node: SceneNode, depth: number): string {
   const pad = "  ".repeat(depth);
   const attrs = attrString(node);
+  if (node.children.length === 0 && node.text !== undefined) {
+    return `${pad}<${node.type}${attrs}>${escapeText(node.text)}</${node.type}>`;
+  }
   if (node.children.length === 0) {
     return `${pad}<${node.type}${attrs} />`;
   }

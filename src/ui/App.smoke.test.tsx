@@ -47,6 +47,17 @@ describe("App smoke", () => {
     expect(useEditor.getState().doc.children.find((c) => c.id === "r1")!.attrs.fill).toBe("#ff0000");
   });
 
+  it("places a text node and shows the text panel", () => {
+    act(() => root.render(<App />));
+    act(() => {
+      useEditor.getState().setTool("text");
+      useEditor.getState().addText({ x: 20, y: 30 });
+    });
+    const textEl = container.querySelector("text");
+    expect(textEl?.textContent).toBe("Text");
+    expect(container.textContent).toContain("Content"); // text panel row
+  });
+
   it("renders editable path nodes under the node tool", () => {
     act(() => root.render(<App />));
     act(() => {

@@ -14,7 +14,7 @@ rationale in [`PLAN.md`](PLAN.md).
 | 2 | Transforms, multi-select, groups, z-order, clipboard, align/distribute | ✅ |
 | 3 | Paths & node editing (Bézier pen, node tool) | ✅ |
 | 4 | Style & fills (solid/gradient fill, stroke, color, opacity) | ✅ |
-| 5 | Text & advanced paths (boolean ops, snapping, measure) | ⬜ |
+| 5 | Text, snapping, measurement (boolean ops deferred) | 🚧 |
 | 6 | Polish, persistence, export, PWA/offline | ⬜ |
 | 7 | (Stretch) anything beyond core — explicitly out of scope for v1 | ⬜ |
 
@@ -61,10 +61,13 @@ stroke colour/width/dashes/caps/joins/alpha; per-object opacity. (On-canvas
 gradient handles, markers, blend modes, and the eyedropper are deferred — see
 `TASKS.md`.)
 
-### Phase 5 — Text & advanced paths ⬜
-Text tool (multiline, fonts, text-on-path), boolean ops
-(union/difference/intersection/exclusion), offset/inset, snapping engine, and a
-measurement tool.
+### Phase 5 — Text & advanced paths 🚧
+**Done:** text tool (place & edit content, font family/size/weight, approx
+bounds so text selects/transforms/styles like any node); a snapping engine
+(snap moves to the grid and to other objects' edges/centres, with live guides
+and a toggle); a measurement readout (selection W×H in the status bar).
+**Remaining:** boolean ops (union/difference/intersection/exclusion),
+offset/inset, text-on-path, multiline text — see `TASKS.md`.
 
 ### Phase 6 — Polish, persistence, export ⬜
 IndexedDB autosave + document manager, File System Access API with download

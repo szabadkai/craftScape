@@ -178,6 +178,13 @@ body {
   border-top: 1px solid var(--border);
 }
 
+.snap-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+}
+
 .statusbar button {
   margin-left: auto;
   font-size: 0.78rem;
@@ -279,6 +286,23 @@ body {
 
 .num {
   width: 60px;
+}
+
+.text-content {
+  flex: 1;
+  padding: 3px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.78rem;
+}
+
+.style-row select {
+  flex: 1;
+  padding: 3px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  background: #fff;
 }
 
 input.hex,

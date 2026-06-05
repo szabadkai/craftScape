@@ -73,6 +73,25 @@ export function ellipseNode(o: EllipseInit): SceneNode {
   };
 }
 
+export interface TextInit {
+  x: number;
+  y: number;
+  text: string;
+  fontSize?: number;
+  fill?: string;
+  id?: string;
+}
+
+export function textNode(o: TextInit): SceneNode {
+  return {
+    id: o.id ?? freshId("text"),
+    type: "text",
+    attrs: num({ x: o.x, y: o.y, "font-size": o.fontSize ?? 24, "font-family": "sans-serif", fill: o.fill ?? "#1f2430" }),
+    text: o.text,
+    children: [],
+  };
+}
+
 // --- Tree queries ----------------------------------------------------------
 
 export function findNode(node: SceneNode, id: string): SceneNode | undefined {
@@ -153,6 +172,11 @@ export function reorderChild(root: SvgDocument, id: string, toIndex: number): Sv
 /** Replace a node (matched by id) with a new node, keeping its position. */
 export function replaceNode(root: SvgDocument, id: string, next: SceneNode): SvgDocument {
   return updateNode(root, id, () => next);
+}
+
+/** Set the text content of a node. */
+export function setText(root: SvgDocument, id: string, text: string): SvgDocument {
+  return updateNode(root, id, (n) => ({ ...n, text }));
 }
 
 /** Reorder a parent's children to match `idOrder` (a permutation of its child ids). */

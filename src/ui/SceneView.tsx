@@ -21,6 +21,7 @@ function RawSvgNode({ node }: { node: SceneNode }) {
     }
     for (const [key, value] of Object.entries(node.attrs)) el.setAttribute(key, value);
     el.setAttribute("data-id", node.id);
+    if (node.text !== undefined && node.children.length === 0) el.textContent = node.text;
     appliedKeys.current = Object.keys(node.attrs);
   });
 

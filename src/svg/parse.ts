@@ -20,10 +20,12 @@ function elementToNode(el: Element): SceneNode {
     else attrs[attr.name] = attr.value;
   }
   const children = Array.from(el.children).map(elementToNode);
+  const text = children.length === 0 && el.textContent ? el.textContent : undefined;
   return {
     id: id || freshId(el.tagName),
     type: el.tagName,
     attrs,
+    ...(text !== undefined ? { text } : {}),
     children,
   };
 }

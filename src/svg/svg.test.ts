@@ -42,6 +42,15 @@ describe("svg round-trip", () => {
     expect(parse(svg)).toEqual(doc);
   });
 
+  it("round-trips text content", () => {
+    const svg =
+      '<svg id="root" xmlns="http://www.w3.org/2000/svg" width="10" height="10">' +
+      '<text id="t1" x="2" y="8" font-size="6">Hi &amp; bye</text></svg>';
+    const doc = parse(svg);
+    expect(doc.children[0].text).toBe("Hi & bye");
+    expect(parse(serialize(doc))).toEqual(doc);
+  });
+
   it("throws on malformed SVG", () => {
     expect(() => parse("<svg><rect></svg>")).toThrow();
   });

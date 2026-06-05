@@ -87,17 +87,19 @@ coverage + build) and an updated demo.
 - [ ] Blend modes
 - [ ] Eyedropper
 
-## Phase 5 — Text & advanced paths ⬜
+## Phase 5 — Text & advanced paths 🚧
 
-- [ ] Text tool (single + multiline)
-- [ ] Font family/size/weight/letter-spacing controls
-- [ ] Web/local font selection
+- [x] Text tool (place & edit content)
+- [x] Font family/size/weight controls
+- [x] Text bounds so text selects/transforms/styles like any node
+- [x] Snapping engine (grid + object edges/centres) with live guides + toggle
+- [x] Measurement readout (selection W×H in the status bar)
+- [x] Tests for snapping + text model/round-trip
+- [ ] Multiline text / letter-spacing / web-font selection
 - [ ] Text on path
 - [ ] Boolean ops: union, difference, intersection, exclusion
 - [ ] Offset / inset path
-- [ ] Snapping engine (grid, guides, nodes, bbox, intersections)
-- [ ] Measurement tool
-- [ ] Tests for boolean ops (fixtures) + snapping
+- [ ] Snap to nodes & guide lines; measurement tool (dedicated)
 
 ## Phase 6 — Polish, persistence, export ⬜
 
