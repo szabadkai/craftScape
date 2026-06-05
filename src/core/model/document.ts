@@ -150,6 +150,11 @@ export function reorderChild(root: SvgDocument, id: string, toIndex: number): Sv
   });
 }
 
+/** Replace a node (matched by id) with a new node, keeping its position. */
+export function replaceNode(root: SvgDocument, id: string, next: SceneNode): SvgDocument {
+  return updateNode(root, id, () => next);
+}
+
 /** Reorder a parent's children to match `idOrder` (a permutation of its child ids). */
 export function orderChildren(root: SvgDocument, parentId: string, idOrder: string[]): SvgDocument {
   return updateNode(root, parentId, (p) => {

@@ -7,7 +7,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
 }
 
-const TOOL_KEYS: Record<string, ToolId> = { v: "select", r: "rect", e: "ellipse" };
+const TOOL_KEYS: Record<string, ToolId> = { v: "select", r: "rect", e: "ellipse", p: "pen", n: "node" };
 const NUDGE: Record<string, [number, number]> = {
   ArrowLeft: [-1, 0],
   ArrowRight: [1, 0],
@@ -21,7 +21,7 @@ function modShortcut(e: KeyboardEvent, store: EditorState): boolean {
   const map: Record<string, () => void> = {
     z: () => (e.shiftKey ? store.redo() : store.undo()),
     y: () => store.redo(),
-    c: () => store.copy(),
+    c: () => (e.shiftKey ? store.convertToPath() : store.copy()),
     x: () => store.cut(),
     v: () => store.paste(),
     d: () => store.duplicate(),
@@ -45,8 +45,12 @@ function plainShortcut(e: KeyboardEvent, store: EditorState): boolean {
     store.zOrder(ORDER[e.key]);
   } else if (e.key === "Delete" || e.key === "Backspace") {
     e.preventDefault();
-    store.deleteSelection();
+    if (store.tool === "node") store.deleteNode();
+    else store.deleteSelection();
+  } else if (e.key === "Enter") {
+    store.finishPen(false);
   } else if (e.key === "Escape") {
+    store.penCancel();
     store.cancelGesture();
     store.setSelection([]);
   } else if (TOOL_KEYS[e.key]) {

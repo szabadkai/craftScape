@@ -58,16 +58,19 @@ coverage + build) and an updated demo.
 - [ ] Object tree panel: drag-reorder, visibility toggle
 - [ ] Playwright: transform + group smoke tests (needs e2e harness, Phase 0)
 
-## Phase 3 — Paths & nodes ⬜
+## Phase 3 — Paths & nodes ✅
 
-- [ ] Path data model (commands M/L/C/Z) + parser/serializer
-- [ ] Pen tool: place anchor points, drag out Bézier handles
-- [ ] Node tool: select/move nodes, move control handles
-- [ ] Add / delete nodes; toggle smooth/corner/symmetric
-- [ ] Robust path hit-testing (point-near-curve)
-- [ ] Convert shape (rect/ellipse) → path
-- [ ] Path simplify
-- [ ] Tests for Bézier math, hit-testing, conversion
+- [x] Path data model (M/L/H/V/C/S/Q/T/Z, abs+rel) + parser/serializer
+- [x] Pen tool: place anchor points, drag out Bézier handles, close path
+- [x] Node tool: select/move nodes, move control handles (with mirror)
+- [x] Delete nodes
+- [x] Bézier math (point-at-t, flatten, nearest-distance hit-testing)
+- [x] Convert shape (rect/ellipse) → path, preserving id & style (undoable)
+- [x] Path bounds (flattened) so paths select/transform/align like any node
+- [x] Tests for Bézier math, parse/serialize, node edits, conversion (+ smoke)
+- [ ] Add a node by clicking a segment (split at t)
+- [ ] Toggle node type (smooth/corner/symmetric)
+- [ ] Path simplify (curve fitting)
 
 ## Phase 4 — Style & fills ⬜
 

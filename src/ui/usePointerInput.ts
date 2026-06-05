@@ -8,6 +8,27 @@ import {
   type ViewportState,
 } from "../core/viewport/Viewport";
 import type { HandleId } from "../geometry/handles";
+import type { HandleKind } from "../tools/pathEdit";
+
+function closestAttr(target: EventTarget | null, attr: string): string | null {
+  return (target as Element).closest?.(`[${attr}]`)?.getAttribute(attr) ?? null;
+}
+
+function penPointerDown(docPoint: Point, target: EventTarget | null) {
+  if (closestAttr(target, "data-pen") === "close") useEditor.getState().penClose();
+  else useEditor.getState().penDown(docPoint);
+}
+
+function nodePointerDown(docPoint: Point, target: EventTarget | null) {
+  const ref = closestAttr(target, "data-node");
+  if (ref) {
+    const [si, ai, which] = ref.split(":");
+    useEditor.getState().nodeDown({ si: Number(si), ai: Number(ai) }, which as HandleKind, docPoint);
+    return;
+  }
+  const id = closestAttr(target, "data-id");
+  useEditor.getState().setSelection(id && id !== "root" ? [id] : []);
+}
 
 interface Options {
   surfaceRef: RefObject<SVGSVGElement>;
@@ -66,6 +87,9 @@ export function usePointerInput({ surfaceRef, vpRef, setVp, onCursor }: Options)
         return;
       }
       const docPoint = toDocument(vpRef.current!, local(e));
+      const tool = useEditor.getState().tool;
+      if (tool === "pen") return penPointerDown(docPoint, e.target);
+      if (tool === "node") return nodePointerDown(docPoint, e.target);
       const handle = (e.target as Element).closest?.("[data-handle]")?.getAttribute("data-handle");
       if (handle) {
         if (handle === "rotate") useEditor.getState().beginRotate(docPoint);
@@ -103,8 +127,12 @@ export function usePointerInput({ surfaceRef, vpRef, setVp, onCursor }: Options)
       }
       const docPoint = toDocument(vpRef.current!, local(e));
       onCursor(docPoint);
-      if (useEditor.getState().gesture.kind !== "none") {
-        useEditor.getState().pointerDrag(docPoint, { aspect: e.shiftKey, snap: e.shiftKey });
+      const store = useEditor.getState();
+      if (store.tool === "pen") store.penMove(docPoint);
+      else if (store.tool === "node") {
+        if (store.nodeDrag) store.nodeMove(docPoint);
+      } else if (store.gesture.kind !== "none") {
+        store.pointerDrag(docPoint, { aspect: e.shiftKey, snap: e.shiftKey });
       }
     },
     [local, onCursor, setVp, surfaceRef, vpRef],
@@ -113,11 +141,15 @@ export function usePointerInput({ surfaceRef, vpRef, setVp, onCursor }: Options)
   const onPointerUp = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
     pointers.current.delete(e.pointerId);
     surfaceRef.current?.releasePointerCapture?.(e.pointerId);
-    if (pointers.current.size === 0) {
-      if (!panning.current && !pinching.current) useEditor.getState().pointerUp();
-      panning.current = false;
-      pinching.current = false;
+    if (pointers.current.size !== 0) return;
+    if (!panning.current && !pinching.current) {
+      const store = useEditor.getState();
+      if (store.tool === "pen") store.penUp();
+      else if (store.tool === "node") store.nodeUp(!e.altKey);
+      else store.pointerUp();
     }
+    panning.current = false;
+    pinching.current = false;
   }, [surfaceRef]);
 
   const onWheel = useCallback(

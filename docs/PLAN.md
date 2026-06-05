@@ -175,11 +175,12 @@ developer; treat them as relative sizing, not commitments.
 - **Demo:** compose a multi-object scene, group it, scale/rotate, reorder, align.
 - _Deferred:_ skew, layers panel with lock, tree drag-reorder.
 
-### Phase 3 — Paths & nodes (~2–3 weeks)
-- Pen (Bézier) tool; Node editing tool (add/remove/move nodes & handles).
-- Path data model + robust hit-testing.
-- Convert shape → path; simplify path.
-- **Demo:** draw and edit arbitrary curves.
+### Phase 3 — Paths & nodes ✅ DONE
+- Path model (parse/serialize SVG `d`) + Bézier math (point/flatten/nearest). ✅
+- Pen tool (draw Bézier paths); Node tool (move anchors & handles, delete). ✅
+- Path hit-testing; shape→path conversion; flattened path bounds. ✅
+- **Demo:** draw and edit arbitrary curves; convert a shape to a path.
+- _Deferred:_ add-node-on-segment, node-type toggle, curve-fit simplify.
 
 ### Phase 4 — Style & fills (~2 weeks)
 - Fill/stroke UI: solid, linear & radial gradients, gradient editor on-canvas.

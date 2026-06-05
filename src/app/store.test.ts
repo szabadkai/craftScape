@@ -105,6 +105,49 @@ describe("editor store integration", () => {
     expect(useEditor.getState().doc.children).toHaveLength(3);
   });
 
+  it("converts a rectangle to a path", () => {
+    drawRect();
+    const id = useEditor.getState().selection[0];
+    useEditor.getState().setSelection([id]);
+    useEditor.getState().convertToPath();
+    const node = useEditor.getState().doc.children.find((c) => c.id === id)!;
+    expect(node.type).toBe("path");
+    expect(node.attrs.d).toContain("M");
+    useEditor.getState().undo();
+    expect(useEditor.getState().doc.children[0].type).toBe("rect");
+  });
+
+  it("draws a path with the pen tool and edits a node", () => {
+    const s = useEditor.getState();
+    s.setTool("pen");
+    s.penDown({ x: 0, y: 0 });
+    s.penUp();
+    s.penDown({ x: 50, y: 0 });
+    s.penUp();
+    s.penDown({ x: 50, y: 50 });
+    s.penUp();
+    s.finishPen(true);
+    const pathId = useEditor.getState().selection[0];
+    const path = useEditor.getState().doc.children.find((c) => c.id === pathId)!;
+    expect(path.type).toBe("path");
+
+    // node-edit: drag the first anchor
+    const ns = useEditor.getState();
+    ns.setTool("node");
+    ns.setSelection([pathId]);
+    ns.nodeDown({ si: 0, ai: 0 }, "point", { x: 0, y: 0 });
+    ns.nodeMove({ x: 10, y: 10 });
+    ns.nodeUp(true);
+    expect(useEditor.getState().doc.children.find((c) => c.id === pathId)!.attrs.d).toContain("M 10 10");
+
+    // delete the dragged node
+    const ds = useEditor.getState();
+    ds.nodeDown({ si: 0, ai: 0 }, "point", { x: 10, y: 10 });
+    ds.nodeUp(true); // selects without moving
+    ds.deleteNode();
+    expect(useEditor.getState().doc.children.find((c) => c.id === pathId)!.attrs.d).not.toContain("M 10 10");
+  });
+
   it("nudges and aligns the selection", () => {
     const a = drawRectAt(10, 10);
     const b = drawRectAt(80, 80);

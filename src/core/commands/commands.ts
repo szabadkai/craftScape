@@ -7,11 +7,15 @@ import {
   orderChildren,
   removeNode,
   reorderChild,
+  replaceNode,
   setAttrs,
   type SceneNode,
   type SvgDocument,
 } from "../model/document";
 import { multiply, parseMatrix, toTransform } from "../../geometry/matrix";
+import { nodeToPathD } from "../../geometry/shapeToPath";
+
+const GEOMETRY_ATTRS = ["x", "y", "width", "height", "cx", "cy", "rx", "ry"];
 
 /**
  * Every mutation to the document is a `Command`. `apply` and `invert` are pure
@@ -130,6 +134,21 @@ function bakeGroupTransform(group: SceneNode): SceneNode[] {
     ...child,
     attrs: { ...child.attrs, transform: toTransform(multiply(parseMatrix(gm), parseMatrix(child.attrs.transform))) },
   }));
+}
+
+/** Convert a rect/ellipse into an equivalent `<path>`, preserving id and style. */
+export function convertToPathCommand(doc: SvgDocument, nodeId: string): Command {
+  const node = findNode(doc, nodeId);
+  const d = node && nodeToPathD(node);
+  if (!node || !d) throw new Error(`Cannot convert node ${nodeId} to a path`);
+  const attrs: Record<string, string> = { ...node.attrs, d };
+  for (const key of GEOMETRY_ATTRS) delete attrs[key];
+  const path: SceneNode = { id: node.id, type: "path", attrs, children: [] };
+  return {
+    label: "Object to Path",
+    apply: (dd) => replaceNode(dd, nodeId, path),
+    invert: (dd) => replaceNode(dd, nodeId, node),
+  };
 }
 
 /** Dissolve a `<g>`, lifting its children into the parent and baking the group transform. */

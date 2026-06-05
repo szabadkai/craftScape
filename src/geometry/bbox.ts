@@ -1,6 +1,7 @@
 import type { SceneNode } from "../core/model/types";
 import type { Point } from "../core/viewport/Viewport";
 import { applyToPoint, parseMatrix, type Matrix } from "./matrix";
+import { parsePath, pathPolyline } from "./path";
 
 export interface Bounds {
   x: number;
@@ -19,6 +20,15 @@ export function normalizeRect(a: Point, b: Point): Bounds {
   };
 }
 
+function pointsBounds(points: Point[]): Bounds | null {
+  if (points.length === 0) return null;
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  return { x: minX, y: minY, width: Math.max(...xs) - minX, height: Math.max(...ys) - minY };
+}
+
 /** Untransformed bounds of a node, from its geometry attributes alone. */
 export function localBounds(node: SceneNode): Bounds | null {
   const n = (key: string): number => Number(node.attrs[key] ?? 0);
@@ -27,6 +37,9 @@ export function localBounds(node: SceneNode): Bounds | null {
   }
   if (node.type === "ellipse") {
     return { x: n("cx") - n("rx"), y: n("cy") - n("ry"), width: 2 * n("rx"), height: 2 * n("ry") };
+  }
+  if (node.type === "path" && node.attrs.d) {
+    return pointsBounds(pathPolyline(parsePath(node.attrs.d)));
   }
   return null;
 }

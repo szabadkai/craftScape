@@ -18,8 +18,10 @@ import {
   type Modifiers,
 } from "../tools/gestures";
 import { createEditActions, type AlignKind } from "./editActions";
+import { createPathActions, type NodeDrag, type PenDraft } from "./pathActions";
+import type { HandleKind, NodeRef } from "../tools/pathEdit";
 
-export type ToolId = "select" | "rect" | "ellipse";
+export type ToolId = "select" | "rect" | "ellipse" | "pen" | "node";
 export type { Gesture, Modifiers, AlignKind };
 
 export interface EditorState {
@@ -29,6 +31,9 @@ export interface EditorState {
   gesture: Gesture;
   mods: Modifiers;
   clipboard: SceneNode[];
+  pen: PenDraft | null;
+  nodeDrag: NodeDrag | null;
+  nodeSel: NodeRef | null;
   canUndo: boolean;
   canRedo: boolean;
   setTool: (tool: ToolId) => void;
@@ -54,6 +59,18 @@ export interface EditorState {
   paste: () => void;
   duplicate: () => void;
   align: (kind: AlignKind) => void;
+  // path / node editing (see pathActions.ts)
+  penDown: (pt: Point) => void;
+  penMove: (pt: Point) => void;
+  penUp: () => void;
+  penClose: () => void;
+  finishPen: (closed: boolean) => void;
+  penCancel: () => void;
+  nodeDown: (ref: NodeRef, which: HandleKind, pt: Point) => void;
+  nodeMove: (pt: Point) => void;
+  nodeUp: (mirror: boolean) => void;
+  deleteNode: () => void;
+  convertToPath: () => void;
 }
 
 type Set = StoreApi<EditorState>["setState"];
@@ -66,6 +83,7 @@ function toggle(ids: string[], id: string): string[] {
 function startPointer(io: { get: Get; set: Set }, pt: Point, targetId: string | null, additive: boolean) {
   const { get, set } = io;
   const { tool, selection } = get();
+  if (tool === "pen" || tool === "node") return; // handled by dedicated path actions
   if (tool === "rect" || tool === "ellipse") {
     set({ gesture: { kind: "create", start: pt, current: pt } });
   } else if (targetId) {
@@ -115,9 +133,12 @@ export const useEditor = create<EditorState>((set, get) => {
     gesture: { kind: "none" },
     mods: { aspect: false, snap: false },
     clipboard: [],
+    pen: null,
+    nodeDrag: null,
+    nodeSel: null,
     canUndo: false,
     canRedo: false,
-    setTool: (tool) => set({ tool, gesture: { kind: "none" } }),
+    setTool: (tool) => set({ tool, gesture: { kind: "none" }, pen: null, nodeDrag: null, nodeSel: null }),
     setSelection: (ids) => set({ selection: ids }),
     pointerDown: (pt, targetId, additive) => startPointer({ get, set }, pt, targetId, additive),
     pointerDrag: (pt, mods) =>
@@ -147,8 +168,18 @@ export const useEditor = create<EditorState>((set, get) => {
     exportSvg: () => serialize(get().doc),
     loadSvg: (svg) => {
       history.clear();
-      set({ doc: parse(svg), selection: [], gesture: { kind: "none" }, canUndo: false, canRedo: false });
+      set({
+        doc: parse(svg),
+        selection: [],
+        gesture: { kind: "none" },
+        pen: null,
+        nodeDrag: null,
+        nodeSel: null,
+        canUndo: false,
+        canRedo: false,
+      });
     },
     ...createEditActions({ get, set, run }),
+    ...createPathActions({ get, set, run }),
   };
 });

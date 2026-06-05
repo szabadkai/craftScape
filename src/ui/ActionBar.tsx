@@ -1,5 +1,6 @@
 import { useEditor, type AlignKind } from "../app/store";
 import { findNode } from "../core/model/document";
+import { nodeToPathD } from "../geometry/shapeToPath";
 
 const ALIGN: Array<{ kind: AlignKind; title: string; glyph: string }> = [
   { kind: "left", title: "Align left", glyph: "⇤" },
@@ -21,10 +22,14 @@ const ORDER: Array<{ mode: "front" | "raise" | "lower" | "back"; title: string; 
 
 /** Context actions for the current selection: order, group, align, duplicate. */
 export function ActionBar() {
-  const { doc, selection, group, ungroup, zOrder, align, duplicate } = useEditor();
+  const { doc, selection, group, ungroup, zOrder, align, duplicate, convertToPath } = useEditor();
   const has = selection.length > 0;
   const multi = selection.length > 1;
   const hasGroup = selection.some((id) => findNode(doc, id)?.type === "g");
+  const convertible = selection.some((id) => {
+    const n = findNode(doc, id);
+    return !!n && nodeToPathD(n) !== null;
+  });
 
   return (
     <div className="action-bar" aria-label="Selection actions">
@@ -44,6 +49,14 @@ export function ActionBar() {
         </button>
         <button type="button" title="Duplicate (Ctrl/⌘+D)" disabled={!has} onClick={duplicate}>
           ⧉
+        </button>
+        <button
+          type="button"
+          title="Object to Path (Ctrl/⌘+Shift+C)"
+          disabled={!convertible}
+          onClick={convertToPath}
+        >
+          ✐
         </button>
       </div>
       <div className="action-group">

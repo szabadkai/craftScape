@@ -38,4 +38,15 @@ describe("App smoke", () => {
     expect(container.querySelector('[data-handle="rotate"]')).not.toBeNull();
     expect(container.querySelectorAll("[data-handle]").length).toBe(9);
   });
+
+  it("renders editable path nodes under the node tool", () => {
+    act(() => root.render(<App />));
+    act(() => {
+      useEditor.getState().setSelection(["r1"]);
+      useEditor.getState().convertToPath();
+      useEditor.getState().setTool("node");
+      useEditor.getState().setSelection(["r1"]);
+    });
+    expect(container.querySelectorAll('[data-node$=":point"]').length).toBeGreaterThan(0);
+  });
 });

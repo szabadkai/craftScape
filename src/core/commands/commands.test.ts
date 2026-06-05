@@ -8,6 +8,7 @@ import {
 import {
   addNodeCommand,
   compositeCommand,
+  convertToPathCommand,
   groupCommand,
   orderChildrenCommand,
   removeNodeCommand,
@@ -107,6 +108,20 @@ describe("structural commands", () => {
     doc = groupCommand(doc, ["a", "b"]).apply(doc); // nest a,b in a group
     const groupId = doc.children.find((c) => c.type === "g")!.children[0].id;
     expect(() => groupCommand(doc, ["c", groupId])).toThrow();
+  });
+
+  it("convertToPathCommand replaces a rect with a path and undoes", () => {
+    let doc = createDocument(100, 100);
+    doc = insertChild(doc, doc.id, rectNode({ x: 0, y: 0, width: 10, height: 10, id: "r1", fill: "#abc" }));
+    const cmd = convertToPathCommand(doc, "r1");
+    const applied = cmd.apply(doc);
+    const path = applied.children[0];
+    expect(path.type).toBe("path");
+    expect(path.id).toBe("r1");
+    expect(path.attrs.d).toContain("M 0 0");
+    expect(path.attrs.fill).toBe("#abc"); // style preserved
+    expect(path.attrs.width).toBeUndefined(); // geometry attrs dropped
+    expect(cmd.invert(applied)).toEqual(doc);
   });
 
   it("ungroupCommand bakes the group transform onto children and undoes", () => {
