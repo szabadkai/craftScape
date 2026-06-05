@@ -7,6 +7,7 @@ const TOOLS: Array<{ id: ToolId; label: string; glyph: string; key: string }> = 
   { id: "rect", label: "Rectangle", glyph: "□", key: "R" },
   { id: "ellipse", label: "Ellipse", glyph: "◯", key: "E" },
   { id: "pen", label: "Pen", glyph: "✐", key: "P" },
+  { id: "text", label: "Text", glyph: "T", key: "T" },
 ];
 
 function downloadSvg(svg: string) {

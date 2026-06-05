@@ -30,6 +30,22 @@ function nodePointerDown(docPoint: Point, target: EventTarget | null) {
   useEditor.getState().setSelection(id && id !== "root" ? [id] : []);
 }
 
+/** Route a single-pointer press to the active tool / handle / target. */
+function singlePointerDown(docPoint: Point, target: EventTarget | null, additive: boolean) {
+  const store = useEditor.getState();
+  if (store.tool === "text") return store.addText(docPoint);
+  if (store.tool === "pen") return penPointerDown(docPoint, target);
+  if (store.tool === "node") return nodePointerDown(docPoint, target);
+  const handle = closestAttr(target, "data-handle");
+  if (handle) {
+    if (handle === "rotate") store.beginRotate(docPoint);
+    else store.beginScale(handle as HandleId, docPoint);
+    return;
+  }
+  const id = closestAttr(target, "data-id");
+  store.pointerDown(docPoint, id && id !== "root" ? id : null, additive);
+}
+
 interface Options {
   surfaceRef: RefObject<SVGSVGElement>;
   vpRef: RefObject<ViewportState>;
@@ -87,18 +103,7 @@ export function usePointerInput({ surfaceRef, vpRef, setVp, onCursor }: Options)
         return;
       }
       const docPoint = toDocument(vpRef.current!, local(e));
-      const tool = useEditor.getState().tool;
-      if (tool === "pen") return penPointerDown(docPoint, e.target);
-      if (tool === "node") return nodePointerDown(docPoint, e.target);
-      const handle = (e.target as Element).closest?.("[data-handle]")?.getAttribute("data-handle");
-      if (handle) {
-        if (handle === "rotate") useEditor.getState().beginRotate(docPoint);
-        else useEditor.getState().beginScale(handle as HandleId, docPoint);
-        return;
-      }
-      const id = (e.target as Element).closest?.("[data-id]")?.getAttribute("data-id");
-      const targetId = id && id !== "root" ? id : null;
-      useEditor.getState().pointerDown(docPoint, targetId, e.shiftKey);
+      singlePointerDown(docPoint, e.target, e.shiftKey);
     },
     [local, surfaceRef, vpRef],
   );

@@ -12,6 +12,8 @@ import {
   removeNode,
   reorderChild,
   setAttrs,
+  setText,
+  textNode,
 } from "./document";
 
 function docWithRect() {
@@ -66,6 +68,14 @@ describe("document model", () => {
     doc = insertChild(doc, doc.id, rectNode({ x: 0, y: 0, width: 1, height: 1, id: "c" }));
     expect(reorderChild(doc, "a", 2).children.map((n) => n.id)).toEqual(["b", "c", "a"]);
     expect(orderChildren(doc, doc.id, ["c", "b", "a"]).children.map((n) => n.id)).toEqual(["c", "b", "a"]);
+  });
+
+  it("creates and edits a text node", () => {
+    const t = textNode({ x: 5, y: 10, text: "Hello", id: "t" });
+    expect(t.type).toBe("text");
+    expect(t.text).toBe("Hello");
+    const doc = insertChild(createDocument(50, 50), "root", t);
+    expect(findNode(setText(doc, "t", "Bye"), "t")?.text).toBe("Bye");
   });
 
   it("clones a subtree with fresh ids", () => {

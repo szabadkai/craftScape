@@ -5,10 +5,12 @@ A browser-based vector graphics editor — an open-source, web-native clone of
 no install, no plugins, **no backend** — everything runs client-side and is
 deployed as a fully static site to GitHub Pages.
 
-> **Status:** Phases 0–4 complete (model, SVG round-trip, shapes, undo/redo,
-> mobile, transforms, groups, z-order, clipboard, align, Bézier paths & node
-> editing, fill/stroke styling & gradients). See the [roadmap](docs/ROADMAP.md),
-> the [task list](docs/TASKS.md), and the [architecture plan](docs/PLAN.md).
+> **Status:** Phases 0–4 complete; Phase 5 in progress (text tool, snapping,
+> measurement). Earlier phases cover the SVG model & round-trip, shapes,
+> undo/redo, mobile, transforms, groups, z-order, clipboard, align, Bézier
+> paths & node editing, and fill/stroke styling with gradients. See the
+> [roadmap](docs/ROADMAP.md), the [task list](docs/TASKS.md), and the
+> [architecture plan](docs/PLAN.md).
 
 ## Goals
 

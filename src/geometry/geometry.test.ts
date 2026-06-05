@@ -32,6 +32,14 @@ describe("bbox", () => {
     expect(nodeBounds(moved)).toEqual({ x: 15, y: 15, width: 20, height: 30 });
   });
 
+  it("approximates text bounds from font-size and length", () => {
+    const t: SceneNode = { id: "t", type: "text", attrs: { x: "10", y: "20", "font-size": "10" }, text: "abcd", children: [] };
+    const b = nodeBounds(t)!;
+    expect(b.x).toBe(10);
+    expect(b.y).toBe(10); // y - font-size (baseline)
+    expect(b.width).toBeGreaterThan(0);
+  });
+
   it("measures container (group) bounds from children", () => {
     const group: SceneNode = {
       id: "g",

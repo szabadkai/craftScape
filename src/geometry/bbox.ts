@@ -41,6 +41,12 @@ export function localBounds(node: SceneNode): Bounds | null {
   if (node.type === "path" && node.attrs.d) {
     return pointsBounds(pathPolyline(parsePath(node.attrs.d)));
   }
+  if (node.type === "text") {
+    // Approximate text metrics (no font measurement in the model layer).
+    const fs = Number(node.attrs["font-size"] ?? 16);
+    const width = (node.text ?? "").length * fs * 0.55;
+    return { x: n("x"), y: n("y") - fs, width, height: fs * 1.25 };
+  }
   return null;
 }
 

@@ -13,6 +13,8 @@ export interface SceneNode {
   readonly type: string;
   /** SVG attributes as raw strings (the `id` lives in `id`, not here). */
   readonly attrs: Readonly<Record<string, string>>;
+  /** Text content for leaf text elements (`<text>`, `<tspan>`), if any. */
+  readonly text?: string;
   /** Child elements, in document (z) order. */
   readonly children: readonly SceneNode[];
 }

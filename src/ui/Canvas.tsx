@@ -84,8 +84,10 @@ function derive(s: EditorSlice): Render {
   };
 }
 
+const GUIDE_SPAN = 100000;
+
 export function Canvas() {
-  const { doc, selection, gesture, tool, mods, pen, nodeDrag, nodeSel } = useEditor();
+  const { doc, selection, gesture, tool, mods, pen, nodeDrag, nodeSel, snapGuides, snapEnabled, setSnap } = useEditor();
   const [vp, setVp] = useState<ViewportState>(INITIAL);
   const vpRef = useRef(vp);
   vpRef.current = vp;
@@ -126,6 +128,13 @@ export function Canvas() {
               pointerEvents="none"
             />
           )}
+          {snapGuides.map((g, i) =>
+            g.axis === "x" ? (
+              <line key={i} x1={g.pos} y1={-GUIDE_SPAN} x2={g.pos} y2={GUIDE_SPAN} stroke="#ff3b9a" strokeWidth={1} vectorEffect="non-scaling-stroke" pointerEvents="none" />
+            ) : (
+              <line key={i} x1={-GUIDE_SPAN} y1={g.pos} x2={GUIDE_SPAN} y2={g.pos} stroke="#ff3b9a" strokeWidth={1} vectorEffect="non-scaling-stroke" pointerEvents="none" />
+            ),
+          )}
           <Overlay gesture={gesture} tool={tool} box={r.previewBox} />
           {tool === "pen" && pen && <PenOverlay draft={pen} scale={vp.scale} />}
           {r.edit && (
@@ -138,7 +147,15 @@ export function Canvas() {
       <div className="statusbar">
         <span>x {cursor.x.toFixed(0)}</span>
         <span>y {cursor.y.toFixed(0)}</span>
+        {r.selBox && (
+          <span>
+            {r.selBox.width.toFixed(0)} × {r.selBox.height.toFixed(0)}
+          </span>
+        )}
         <span>{(vp.scale * 100).toFixed(0)}%</span>
+        <label className="snap-toggle">
+          <input type="checkbox" checked={snapEnabled} onChange={(e) => setSnap(e.target.checked)} /> Snap
+        </label>
         <button type="button" onClick={() => setVp(INITIAL)}>
           Reset view
         </button>

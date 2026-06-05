@@ -168,6 +168,31 @@ describe("editor store integration", () => {
     expect(defs.children[0].children[0].attrs["stop-color"]).toBe("#123456");
   });
 
+  it("adds and edits a text node", () => {
+    const s = useEditor.getState();
+    s.setTool("text");
+    s.addText({ x: 20, y: 30 });
+    const id = useEditor.getState().selection[0];
+    let node = useEditor.getState().doc.children.find((c) => c.id === id)!;
+    expect(node.type).toBe("text");
+    expect(node.text).toBe("Text");
+    expect(useEditor.getState().tool).toBe("select"); // switches back after placing
+    useEditor.getState().setText("Hello world");
+    node = useEditor.getState().doc.children.find((c) => c.id === id)!;
+    expect(node.text).toBe("Hello world");
+  });
+
+  it("snaps a move to another object's edge", () => {
+    drawRectAt(10, 10); // 20x20 at (10,10): right edge x=30
+    const b = drawRectAt(34, 80); // left edge x=34, within tolerance of the first rect's right edge
+    const s = useEditor.getState();
+    s.setTool("select");
+    s.pointerDown({ x: 40, y: 90 }, b, false);
+    s.pointerDrag({ x: 41, y: 90 }); // tiny move; snap should pull left edge to 30
+    expect(useEditor.getState().snapGuides.length).toBeGreaterThan(0);
+    s.pointerUp();
+  });
+
   it("nudges and aligns the selection", () => {
     const a = drawRectAt(10, 10);
     const b = drawRectAt(80, 80);

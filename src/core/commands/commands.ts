@@ -9,6 +9,7 @@ import {
   reorderChild,
   replaceNode,
   setAttrs,
+  setText,
   type SceneNode,
   type SvgDocument,
 } from "../model/document";
@@ -148,6 +149,18 @@ export function convertToPathCommand(doc: SvgDocument, nodeId: string): Command 
     label: "Object to Path",
     apply: (dd) => replaceNode(dd, nodeId, path),
     invert: (dd) => replaceNode(dd, nodeId, node),
+  };
+}
+
+/** Set the text content of a `<text>` node. */
+export function setTextCommand(doc: SvgDocument, nodeId: string, text: string): Command {
+  const node = findNode(doc, nodeId);
+  if (!node) throw new Error(`Cannot set text on unknown node ${nodeId}`);
+  const previous = node.text ?? "";
+  return {
+    label: "Edit text",
+    apply: (d) => setText(d, nodeId, text),
+    invert: (d) => setText(d, nodeId, previous),
   };
 }
 

@@ -2,6 +2,7 @@ import { useEditor } from "../app/store";
 import { ActionBar } from "./ActionBar";
 import { Canvas } from "./Canvas";
 import { FillStrokePanel } from "./FillStrokePanel";
+import { TextPanel } from "./TextPanel";
 import { Toolbar } from "./Toolbar";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 
@@ -47,6 +48,7 @@ export function App() {
         </main>
         <aside className="panels" aria-label="Panels">
           <ObjectsPanel />
+          <TextPanel />
           <FillStrokePanel />
         </aside>
       </div>
