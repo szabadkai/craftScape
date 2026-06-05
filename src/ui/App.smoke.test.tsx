@@ -39,6 +39,14 @@ describe("App smoke", () => {
     expect(container.querySelectorAll("[data-handle]").length).toBe(9);
   });
 
+  it("shows the fill & stroke panel and recolours the selection", () => {
+    act(() => root.render(<App />));
+    act(() => useEditor.getState().setSelection(["r1"]));
+    expect(container.textContent).toContain("Fill");
+    act(() => useEditor.getState().setStyle({ fill: "#ff0000" }));
+    expect(useEditor.getState().doc.children.find((c) => c.id === "r1")!.attrs.fill).toBe("#ff0000");
+  });
+
   it("renders editable path nodes under the node tool", () => {
     act(() => root.render(<App />));
     act(() => {

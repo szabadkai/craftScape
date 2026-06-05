@@ -151,6 +151,30 @@ export function convertToPathCommand(doc: SvgDocument, nodeId: string): Command 
   };
 }
 
+/** Point a node's fill at a gradient, inserting it into `<defs>` (created if needed). */
+export function setFillGradientCommand(doc: SvgDocument, nodeId: string, gradient: SceneNode): Command {
+  const node = findNode(doc, nodeId);
+  if (!node) throw new Error(`Cannot style unknown node ${nodeId}`);
+  const oldFill = node.attrs.fill ?? null;
+  const existingDefs = doc.children.find((c) => c.type === "defs");
+  const defsId = existingDefs?.id ?? freshId("defs");
+  const createdDefs = !existingDefs;
+  return {
+    label: "Apply gradient",
+    apply: (d) => {
+      const withDefs = createdDefs
+        ? insertChild(d, d.id, { id: defsId, type: "defs", attrs: {}, children: [] }, 0)
+        : d;
+      return setAttrs(insertChild(withDefs, defsId, gradient), nodeId, { fill: `url(#${gradient.id})` });
+    },
+    invert: (d) => {
+      const restored = setAttrs(d, nodeId, { fill: oldFill });
+      const withoutGradient = removeNode(restored, gradient.id);
+      return createdDefs ? removeNode(withoutGradient, defsId) : withoutGradient;
+    },
+  };
+}
+
 /** Dissolve a `<g>`, lifting its children into the parent and baking the group transform. */
 export function ungroupCommand(doc: SvgDocument, groupId: string): Command {
   const group = findNode(doc, groupId);

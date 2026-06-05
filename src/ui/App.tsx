@@ -1,6 +1,7 @@
 import { useEditor } from "../app/store";
 import { ActionBar } from "./ActionBar";
 import { Canvas } from "./Canvas";
+import { FillStrokePanel } from "./FillStrokePanel";
 import { Toolbar } from "./Toolbar";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 
@@ -46,10 +47,7 @@ export function App() {
         </main>
         <aside className="panels" aria-label="Panels">
           <ObjectsPanel />
-          <section className="panel">
-            <h2>Fill &amp; Stroke</h2>
-            <p className="muted">Styling lands in Phase 4.</p>
-          </section>
+          <FillStrokePanel />
         </aside>
       </div>
     </div>
